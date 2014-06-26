@@ -3,7 +3,6 @@
 from setuptools import setup, find_packages
 from os.path import join, dirname
 
-
 setup(
       name='tagcube_cli',
 
@@ -13,7 +12,7 @@ setup(
       
       description=('CLI to launch web application security scans using'
                    'TagCube\'s REST API '),
-      long_description=open(join(dirname(__file__), 'README.rst')).read(),
+      long_description=file(join(dirname(__file__), 'README.rst')).read(),
       
       author='TagCube',
       author_email='support@tagcube.io',
@@ -22,7 +21,12 @@ setup(
       packages=find_packages(),
       include_package_data=True,
       install_requires=['requests', 'PyYAML'],
-      
+
+      entry_points={
+          'console_scripts':
+              ['tagcube-cli = tagcube_cli.main:main']
+      },
+
       # https://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers = [
         'Development Status :: 4 - Beta',

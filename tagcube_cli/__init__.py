@@ -1,1 +1,1 @@
-from .splunk_logger import SplunkLogger
+from .cli import TagCubeClient
