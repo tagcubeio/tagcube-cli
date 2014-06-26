@@ -39,7 +39,6 @@ class TagCubeCLI(object):
         * Creates and configures a TagCubeClient instance
         * Launches a scan
     """
-
     def __init__(self, email, api_key, cmd_args):
         self.client = TagCubeClient(email, api_key)
         self.cmd_args = cmd_args
@@ -146,6 +145,17 @@ class TagCubeCLI(object):
         else:
             if cmd_args.target_url is None:
                 parser.error('argument --target-url is required')
+            elif not (cmd_args.target_url.startswith('http://') or\
+                      cmd_args.target_url.startswith('https://')):
+                parser.error('Invalid target URL: "%s"' % cmd_args.target_url)
+
+        if cmd_args.tagcube_email is not None:
+            if not is_valid_email(cmd_args.tagcube_email):
+                parser.error('Invalid tagcube user email: "%s"' % cmd_args.tagcube_email)
+
+        if cmd_args.email_notify is not None:
+            if not is_valid_email(cmd_args.email_notify):
+                parser.error('Invalid notification email: "%s"' % cmd_args.email_notify)
 
         level = logging.DEBUG if cmd_args.verbose else logging.INFO
         logging.basicConfig(format='%(message)s', level=level)
@@ -216,3 +226,10 @@ class CustomArgParser(argparse.ArgumentParser):
 class CustomHelpFormatter(argparse.HelpFormatter):
     def add_raw_text(self, text):
         self._add_item(lambda x: x, [text])
+
+
+def is_valid_email(email):
+    """
+    Very trivial check to verify that the user provided parameter is an email
+    """
+    return '@' in email and '.' in email
