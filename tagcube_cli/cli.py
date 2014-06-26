@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from tagcube_cli.utils import parse_config_file, get_config_from_env
 from tagcube import TagCubeClient
@@ -27,7 +28,11 @@ class TagCubeCLI(object):
         the user specified a path file we'll open it and read the contents.
         Finally it will run the scan using TagCubeClient.scan(...)
         """
-        self.client.test_auth_credentials()
+        if not self.client.test_auth_credentials():
+            raise ValueError('Invalid TagCube REST API credentials.')
+
+        logging.debug('Authentication credentials are valid')
+
         raise NotImplementedError
 
     @staticmethod
@@ -88,11 +93,20 @@ class TagCubeCLI(object):
                                  ' is used when no --path-file parameter is'
                                  ' specified.')
 
+        parser.add_argument('-v',
+                            required=False,
+                            dest='verbose',
+                            action='store_true',
+                            help='Enables verbose output')
+
         cmd_args = parser.parse_args(args)
 
         if len([x for x in (cmd_args.tagcube_api_key, cmd_args.tagcube_email) if x is not None]) == 1:
             parser.error('--tagcube-api-key and --tagcube-email must be given'
                          ' together')
+
+        level = logging.DEBUG if cmd_args.verbose else logging.INFO
+        logging.basicConfig(format='%(message)s', level=level)
 
         return cmd_args
 
@@ -110,16 +124,19 @@ class TagCubeCLI(object):
         # Check the cmd args, return if we have something here
         cmd_credentials = cmd_args.tagcube_email, cmd_args.tagcube_api_key
         if cmd_credentials != (None, None):
+            logging.debug('Using command line configured credentials')
             return cmd_credentials
 
         env_email, env_api_key = get_config_from_env()
         if env_email is not None:
             if env_api_key is not None:
+                logging.debug('Using environment configured credentials')
                 return env_email, env_api_key
 
         cfg_email, cfg_api_key = parse_config_file()
         if cfg_email is not None:
             if cfg_api_key is not None:
+                logging.debug('Using .tagcube file configured credentials')
                 return cfg_email, cfg_api_key
 
         raise ValueError('No credentials provided at: command line argument,'
