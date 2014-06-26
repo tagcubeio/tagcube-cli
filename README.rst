@@ -1,8 +1,8 @@
-TagCube cli tool
-================
+TagCube's CLI tool
+==================
 
-Tool to launch web application security scans using TagCube's REST API, commonly
-used in continuous delivery scripts.
+Launch web application security scans using `TagCube's REST API <https://www.tagcube.io>`_,
+commonly used in continuous delivery scripts.
 
 .. image:: https://circleci.com/gh/andresriancho/tagcube-cli.png?circle-token=dc4aa96d817b9d41baf6778f2db9b3fe87d6b5e2
    :alt: Build Status
