@@ -145,7 +145,7 @@ class TagCubeCLI(object):
         else:
             if cmd_args.target_url is None:
                 parser.error('argument --target-url is required')
-            elif not (cmd_args.target_url.startswith('http://') or\
+            elif not (cmd_args.target_url.startswith('http://') or \
                       cmd_args.target_url.startswith('https://')):
                 parser.error('Invalid target URL: "%s"' % cmd_args.target_url)
 
@@ -156,6 +156,12 @@ class TagCubeCLI(object):
         if cmd_args.email_notify is not None:
             if not is_valid_email(cmd_args.email_notify):
                 parser.error('Invalid notification email: "%s"' % cmd_args.email_notify)
+
+        if cmd_args.path_file is not None:
+            try:
+                cmd_args.path_file = path_file_to_list(cmd_args.path_file)
+            except ValueError, ve:
+                parser.error('%s' % ve)
 
         level = logging.DEBUG if cmd_args.verbose else logging.INFO
         logging.basicConfig(format='%(message)s', level=level)
@@ -233,3 +239,48 @@ def is_valid_email(email):
     Very trivial check to verify that the user provided parameter is an email
     """
     return '@' in email and '.' in email
+
+
+def is_valid_path(path):
+    """
+    :return: True if the path is valid, else raise a ValueError with the
+             specific error
+    """
+    if not path.startswith('/'):
+        msg = 'Invalid path "%s". Paths need to start with "/".'
+        raise ValueError(msg % path[:40])
+
+    for c in ' \t':
+        if c in path:
+            msg = 'Invalid character "%s" found in path. Paths need to be' \
+                  ' URL-encoded.'
+            raise ValueError(msg % c)
+
+    return True
+
+
+def path_file_to_list(path_file):
+    """
+    :return: A list with the paths which are stored in a text file in a line-by-
+             line format. Validate each path using is_valid_path
+    """
+    paths = []
+
+    for line_no, line in enumerate(path_file.readlines(), start=1):
+        line = line.strip()
+
+        if not line:
+            # Blank line support
+            continue
+
+        if line.startswith('#'):
+            # Comment support
+            continue
+
+        try:
+            is_valid_path(line)
+            paths.append(line)
+        except ValueError, ve:
+            raise ValueError('%s Error found in line %s.' % (ve, line_no))
+
+    return paths
