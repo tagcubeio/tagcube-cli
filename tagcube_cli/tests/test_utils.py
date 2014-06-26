@@ -8,7 +8,7 @@ from tagcube_cli.utils import _parse_config_file_impl
 CONFIG_FMT = '''\
 credentials:
     email: %s
-    api_token: %s
+    api_key: %s
 '''
 
 
@@ -29,10 +29,8 @@ class TestParseConfigFile(unittest.TestCase):
         os.unlink(fh.name)
 
     def test_parse_config_not_exists(self):
-        email, api_token = _parse_config_file_impl('/foo/bar')
-        self.assertEqual(email, None)
-        self.assertEqual(api_token, None)
-    
+        self.assertRaises(IOError, _parse_config_file_impl, '/foo/bar')
+
     def test_parse_config_invalid_format(self):
         fh = tempfile.NamedTemporaryFile('w', delete=False)
         fh.write('hello world!')

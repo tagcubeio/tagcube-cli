@@ -40,10 +40,15 @@ def _parse_config_file_impl(filename):
         api_key = doc["credentials"]["api_key"]
         
         return email, api_key
+    except TypeError:
+        msg = 'Invalid .tagcube configuration file'
+        print(msg)
+
     except yaml.scanner.ScannerError, e:
         msg = 'Invalid .tagcube configuration file format: "%s" at line %s'
         print(msg % (e.problem, e.problem_mark.line))
-        return None, None
+
+    return None, None
 
 
 def get_config_from_env():

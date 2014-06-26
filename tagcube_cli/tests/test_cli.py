@@ -7,7 +7,7 @@ from tagcube_cli.cli import TagCubeCLI
 
 class TestTagCubeCLI(unittest.TestCase):
 
-    SIMPLE_ARGS = ['target.com', '--email-notify=a@b.com']
+    SIMPLE_ARGS = ['--target-url=http://target.com']
 
     def test_user_pass_environment(self):
         with patch.dict('os.environ', {'TAGCUBE_EMAIL': 'x@y.com',
