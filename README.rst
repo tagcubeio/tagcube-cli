@@ -23,9 +23,9 @@ as parameter:
 This will create the new domain resource in TagCube's REST API and start a new
 scan using these defaults:
 
- - Bootstrap paths: ``/``
- - Web application scan profile: ``full_audit``
- - No web application authentication credentials
+- Bootstrap paths: ``/``
+- Web application scan profile: ``full_audit``
+- No web application authentication credentials
 
 When the scan has finished an email will be sent to ``user@example.com``.
 
