@@ -56,7 +56,7 @@ class TestTagCubeCLI(unittest.TestCase):
 
         args = self.SIMPLE_ARGS + ['--path-file=%s' % fh.name]
         parsed_args = TagCubeCLI.parse_args(args)
-        self.assertEqual(parsed_args.path_file, ['/foo', '/bar'])
+        self.assertEqual(parsed_args.path_list, ['/foo', '/bar'])
 
     def test_parse_path_file_incorrect_format(self):
         path_file = 'bar'

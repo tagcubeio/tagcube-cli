@@ -1,8 +1,11 @@
 import argparse
 import logging
 
-from tagcube_cli.utils import parse_config_file, get_config_from_env
 from tagcube import TagCubeClient
+from tagcube_cli.utils import (parse_config_file, get_config_from_env,
+                               path_file_to_list, is_valid_email,
+                               CustomArgParser, CustomHelpFormatter)
+
 
 DESCRIPTION = 'TagCube client - %s' % TagCubeClient.ROOT_URL
 EPILOG = '''\
@@ -54,12 +57,39 @@ class TagCubeCLI(object):
         the user specified a path file we'll open it and read the contents.
         Finally it will run the scan using TagCubeClient.scan(...)
         """
+        handler = self.choose_handler()
+        handler()
+
+    def choose_handler(self):
+        """
+        :return: The method that should be run based on the contents of
+                 self.cmd_args
+        """
+        if self.cmd_args.auth_test:
+            return self.handle_auth_test
+        else:
+            return self.handle_scan_start
+
+    def handle_auth_test(self):
+        """
+        Handle the case where the user specifies --auth-test
+        """
+        if not self.client.test_auth_credentials():
+            raise ValueError('Invalid TagCube REST API credentials.')
+
+        logging.info('TagCube credentials are valid')
+
+    def handle_scan_start(self):
         if not self.client.test_auth_credentials():
             raise ValueError('Invalid TagCube REST API credentials.')
 
         logging.debug('Authentication credentials are valid')
+        logging.debug('Starting web application scan')
 
-        raise NotImplementedError
+        self.client.quick_scan(self.cmd_args.target_url,
+                               email_notify=self.cmd_args.email_notify,
+                               scan_profile=self.cmd_args.scan_profile,
+                               paths=self.cmd_args.path_list)
 
     @staticmethod
     def parse_args(args=None):
@@ -159,9 +189,12 @@ class TagCubeCLI(object):
 
         if cmd_args.path_file is not None:
             try:
-                cmd_args.path_file = path_file_to_list(cmd_args.path_file)
+                cmd_args.path_list = path_file_to_list(cmd_args.path_file)
             except ValueError, ve:
                 parser.error('%s' % ve)
+        else:
+            # The default path list is just a /
+            cmd_args.path_list = ['/']
 
         level = logging.DEBUG if cmd_args.verbose else logging.INFO
         logging.basicConfig(format='%(message)s', level=level)
@@ -200,87 +233,3 @@ class TagCubeCLI(object):
         raise ValueError('No credentials provided at: command line argument,'
                          ' configuration file or environment variables.')
 
-
-class CustomArgParser(argparse.ArgumentParser):
-    def format_help(self):
-        """
-        Overriding to call add_raw_text
-        """
-        formatter = self._get_formatter()
-
-        # usage
-        formatter.add_usage(self.usage, self._actions,
-                            self._mutually_exclusive_groups)
-
-        # description
-        formatter.add_text(self.description)
-
-        # positionals, optionals and user-defined groups
-        for action_group in self._action_groups:
-            formatter.start_section(action_group.title)
-            formatter.add_text(action_group.description)
-            formatter.add_arguments(action_group._group_actions)
-            formatter.end_section()
-
-        # epilog
-        formatter.add_raw_text(self.epilog)
-
-        # determine help from format above
-        return formatter.format_help()
-
-
-class CustomHelpFormatter(argparse.HelpFormatter):
-    def add_raw_text(self, text):
-        self._add_item(lambda x: x, [text])
-
-
-def is_valid_email(email):
-    """
-    Very trivial check to verify that the user provided parameter is an email
-    """
-    return '@' in email and '.' in email
-
-
-def is_valid_path(path):
-    """
-    :return: True if the path is valid, else raise a ValueError with the
-             specific error
-    """
-    if not path.startswith('/'):
-        msg = 'Invalid path "%s". Paths need to start with "/".'
-        raise ValueError(msg % path[:40])
-
-    for c in ' \t':
-        if c in path:
-            msg = 'Invalid character "%s" found in path. Paths need to be' \
-                  ' URL-encoded.'
-            raise ValueError(msg % c)
-
-    return True
-
-
-def path_file_to_list(path_file):
-    """
-    :return: A list with the paths which are stored in a text file in a line-by-
-             line format. Validate each path using is_valid_path
-    """
-    paths = []
-
-    for line_no, line in enumerate(path_file.readlines(), start=1):
-        line = line.strip()
-
-        if not line:
-            # Blank line support
-            continue
-
-        if line.startswith('#'):
-            # Comment support
-            continue
-
-        try:
-            is_valid_path(line)
-            paths.append(line)
-        except ValueError, ve:
-            raise ValueError('%s Error found in line %s.' % (ve, line_no))
-
-    return paths
