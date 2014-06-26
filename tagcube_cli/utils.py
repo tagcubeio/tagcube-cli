@@ -12,9 +12,10 @@ def parse_config_file():
                 - api_token
     """
     for filename in ('.tagcube', os.path.expanduser('~/.tagcube')):
-        email, api_token = _parse_config_file_impl(filename)
-        if email is not None and api_token is not None:
-            return email, api_token
+        if os.path.exists(filename):
+            email, api_key = _parse_config_file_impl(filename)
+            if email is not None and api_key is not None:
+                return email, api_key
     else:
         return None, None
 
@@ -36,10 +37,12 @@ def _parse_config_file_impl(filename):
         doc = yaml.load(file(filename).read())
         
         email = doc["credentials"]["email"]
-        api_token = doc["credentials"]["api_token"]
+        api_key = doc["credentials"]["api_key"]
         
-        return email, api_token
-    except:
+        return email, api_key
+    except yaml.scanner.ScannerError, e:
+        msg = 'Invalid .tagcube configuration file format: "%s" at line %s'
+        print(msg % (e.problem, e.problem_mark.line))
         return None, None
 
 
