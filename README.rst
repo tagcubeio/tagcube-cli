@@ -34,6 +34,41 @@ When the scan has finished an email will be sent to the user's email address.
 use the REST API or Web application to *create and verify the ownership of the
 target domain* before running the first scan against it.
 
+Advanced usage
+==============
+
+Run a scan to ``http://target.com/``, notify the REST API username email address
+when it finishes
+
+::
+
+    $ tagcube-cli --target-url=http://target.com
+
+
+Run a scan with a custom profile, enabling verbose mode and notifying a
+different email address when the scan finishes
+
+::
+
+    $ tagcube-cli --target-url=http://target.com --email-notify=other@example.com \
+                  --scan-profile=fast_scan -v
+
+Provide TagCube's REST API credentials as command line arguments. Read the
+documentation to find how to provide REST API credentials using environment
+variables or the .tagcube file
+
+::
+
+    $ tagcube-cli --target-url=http://target.com  --tagcube-email=user@example.com \\
+                  --tagcube-api-key=...
+
+Verify that the configured credentials are working
+
+::
+
+    $ tagcube-cli --auth-test
+
+
 Configuration file
 ==================
 
