@@ -5,6 +5,14 @@ import json
 from tagcube.utils.urlparsing import get_domain_from_url, get_port_from_url
 
 CAN_NOT_SCAN_DOMAIN_ERROR = '''\
+You can't scan the specified domain. This happens in the following cases:
+
+ * The current plan only allows scans to verified domains => Verify your domain
+ ownership using TagCube's web UI or the REST API.
+
+ * The domain quota for your plan has been exceeded => Upgrade your plan to be
+ able to scan more domains.
+
 '''
 
 
