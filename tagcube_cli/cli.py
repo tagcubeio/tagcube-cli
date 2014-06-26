@@ -4,6 +4,33 @@ import logging
 from tagcube_cli.utils import parse_config_file, get_config_from_env
 from tagcube import TagCubeClient
 
+DESCRIPTION = 'TagCube client - %s' % TagCubeClient.ROOT_URL
+EPILOG = '''\
+examples:\n
+
+ * Run a scan to http://target.com/, notify the REST API username email address
+   when it finishes
+
+        tagcube-cli --target-url=http://target.com
+
+ * Run a scan with a custom profile, enabling verbose mode and notifying a
+   different email address when the scan finishes
+
+        tagcube-cli --target-url=http://target.com --email-notify=other@example.com \\
+                    --scan-profile=fast_scan -v
+
+ * Provide TagCube's REST API credentials as command line arguments. Read the
+   documentation to find how to provide REST API credentials using environment
+   variables or the .tagcube file
+
+        tagcube-cli --target-url=http://target.com  --tagcube-email=user@example.com \\
+                    --tagcube-api-key=...
+
+ * Verify that the configured credentials are working
+
+        tagcube-cli --auth-test
+'''
+
 
 class TagCubeCLI(object):
     """
@@ -38,20 +65,21 @@ class TagCubeCLI(object):
     @staticmethod
     def parse_args(args=None):
         """
-        :return:
+        :return: The result of applying arparse to sys.argv
         """
-        description = 'TagCube client - %s' % TagCubeClient.ROOT_URL
+        parser = CustomArgParser(prog='tagcube-cli',
+                                 description=DESCRIPTION,
+                                 epilog=EPILOG,
+                                 formatter_class=CustomHelpFormatter)
 
-        parser = argparse.ArgumentParser(prog='tagcube-cli',
-                                         description=description)
-
-        parser.add_argument('domain',
-                            metavar='target-domain',
-                            help='Domain name to scan for web application'
-                                 'vulnerabilities')
+        parser.add_argument('--target-url',
+                            required=False,
+                            dest='target_url',
+                            help='URL for web application security scan.'
+                                 '(e.g. https://www.target.com/)')
 
         parser.add_argument('--email-notify',
-                            required=True,
+                            required=False,
                             dest='email_notify',
                             help='Email address to notify when application'
                                  ' scan finishes')
@@ -61,7 +89,9 @@ class TagCubeCLI(object):
                             dest='auth_test',
                             action='store_true',
                             help='Test configured authentication credentials'
-                                 ' and exit')
+                                 ' and exit. No target URL nor email'
+                                 ' notifications need to be configured to'
+                                 ' verify the credentials.')
 
         parser.add_argument('--tagcube-email',
                             required=False,
@@ -105,6 +135,18 @@ class TagCubeCLI(object):
             parser.error('--tagcube-api-key and --tagcube-email must be given'
                          ' together')
 
+        if cmd_args.auth_test:
+            # When auth_test is specified, we'll just perform that action and
+            # exit, so all the other parameters are ignored. We want to enforce
+            # that action here
+            if cmd_args.target_url is not None or\
+            cmd_args.email_notify is not None:
+                parser.error('--target-url and --email-notify should not be'
+                             ' set when --auth-test is.')
+        else:
+            if cmd_args.target_url is None:
+                parser.error('argument --target-url is required')
+
         level = logging.DEBUG if cmd_args.verbose else logging.INFO
         logging.basicConfig(format='%(message)s', level=level)
 
@@ -141,3 +183,36 @@ class TagCubeCLI(object):
 
         raise ValueError('No credentials provided at: command line argument,'
                          ' configuration file or environment variables.')
+
+
+class CustomArgParser(argparse.ArgumentParser):
+    def format_help(self):
+        """
+        Overriding to call add_raw_text
+        """
+        formatter = self._get_formatter()
+
+        # usage
+        formatter.add_usage(self.usage, self._actions,
+                            self._mutually_exclusive_groups)
+
+        # description
+        formatter.add_text(self.description)
+
+        # positionals, optionals and user-defined groups
+        for action_group in self._action_groups:
+            formatter.start_section(action_group.title)
+            formatter.add_text(action_group.description)
+            formatter.add_arguments(action_group._group_actions)
+            formatter.end_section()
+
+        # epilog
+        formatter.add_raw_text(self.epilog)
+
+        # determine help from format above
+        return formatter.format_help()
+
+
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def add_raw_text(self, text):
+        self._add_item(lambda x: x, [text])

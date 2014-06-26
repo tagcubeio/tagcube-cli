@@ -12,26 +12,27 @@ commonly used in continuous delivery scripts.
 Usage
 =====
 
-The easiest way to start a new scan is to call ``tagcube-cli`` with the domain
-as parameter:
+The easiest way to start a new scan is to call ``tagcube-cli`` with the target
+URL as parameter:
 
 ::
 
-    $ tagcube-cli domain.com --email-notify=user@example.com
-    Web application scan for "domain.com" successfully started at TagCube cloud.
+    $ export TAGCUBE_EMAIL=user@example.com
+    $ export TAGCUBE_API_KEY=`cat key.txt`
+    $ tagcube-cli --target-url=http://domain.com
+    Web application scan for "http://domain.com/" successfully started at TagCube cloud.
 
 This will create the new domain resource in TagCube's REST API and start a new
 scan using these defaults:
 
 - Bootstrap paths: ``/``
 - Web application scan profile: ``full_audit``
-- No web application authentication credentials
 
-When the scan has finished an email will be sent to ``user@example.com``.
+When the scan has finished an email will be sent to the user's email address.
 
 **Important**: depending on TagCube's license quotas and privileges you might need to
-use the REST API or Web application to create and verify the ownership of the
-target domain before running the first scan against it.
+use the REST API or Web application to *create and verify the ownership of the
+target domain* before running the first scan against it.
 
 Configuration file
 ==================
