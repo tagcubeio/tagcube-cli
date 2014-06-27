@@ -1,3 +1,4 @@
+import os
 import requests
 import logging
 import json
@@ -35,10 +36,12 @@ You can't scan the specified domain. This happens in the following cases:
 
 class TagCubeClient(object):
 
-    ROOT_URL = 'https://api.tagcube.io/'
+    ROOT_DOMAIN = os.environ.get('ROOT_DOMAIN', None) or 'api.tagcube.io'
+    ROOT_URL = 'https://%s/' % ROOT_DOMAIN
     API_VERSION = '1.0'
     SELF_URL = '/users/~'
     DOMAINS = '/domains/'
+    VERIFICATIONS = '/verifications/'
     SCAN_PROFILES = '/profiles/'
     DESCRIPTION = 'Created by TagCube REST API client'
 
@@ -54,8 +57,12 @@ class TagCubeClient(object):
         """
         :return: True when the credentials are properly configured.
         """
-        code, json = self.send_request(self.build_full_url(self.SELF_URL))
-        return code == requests.codes.ok
+        try:
+            code, _ = self.send_request(self.build_full_url(self.SELF_URL))
+        except IncorrectAPICredentials:
+            return False
+        else:
+            return code == requests.codes.ok
 
     def quick_scan(self, target_url, email_notify=None,
                    scan_profile='full_audit', path_list=('/',)):
@@ -184,6 +191,27 @@ class TagCubeClient(object):
         :return: The scan profile resource (as Resource), or None
         """
         return self.filter_resource('profiles', 'name', scan_profile)
+
+    def verification_add(self, domain_resource_id, port, is_ssl):
+        """
+        Sends a POST to /1.0/verifications/ using this post-data:
+
+            {"domain_href": "/1.0/domains/2",
+             "port":80,
+             "ssl":false}
+
+        :param domain_resource_id: The domain id to verify
+        :param port: The TCP port
+        :param is_ssl: Boolean indicating if we should use ssl
+
+        :return: The newly created resource
+        """
+        data = {"domain_href": self.build_api_path('domains',
+                                                   domain_resource_id),
+                "port": port,
+                "ssl": 'true' if is_ssl else 'false'}
+        url = self.build_full_url(self.VERIFICATIONS)
+        return self.create_resource(url, data)
 
     def get_latest_verification(self, domain_resource_id, port, is_ssl):
         """

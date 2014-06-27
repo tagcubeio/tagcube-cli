@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from tagcube import TagCubeClient
+from tagcube.utils.exceptions import IncorrectAPICredentials
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                path_file_to_list, is_valid_email,
                                CustomArgParser, CustomHelpFormatter)
@@ -86,10 +87,12 @@ class TagCubeCLI(object):
         logging.debug('Authentication credentials are valid')
         logging.debug('Starting web application scan')
 
-        self.client.quick_scan(self.cmd_args.target_url,
-                               email_notify=self.cmd_args.email_notify,
-                               scan_profile=self.cmd_args.scan_profile,
-                               paths=self.cmd_args.path_list)
+        scan_resource = self.client.quick_scan(self.cmd_args.target_url,
+                                               email_notify=self.cmd_args.email_notify,
+                                               scan_profile=self.cmd_args.scan_profile,
+                                               path_list=self.cmd_args.path_list)
+
+        logging.info('Launched scan with id #%s' % scan_resource.id)
 
     @staticmethod
     def parse_args(args=None):
