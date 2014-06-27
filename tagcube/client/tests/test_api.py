@@ -13,14 +13,19 @@ class TestTagCubeClient(unittest.TestCase):
     API_KEY = 'f364b098-0fb3-4178-a45b-883f389ad294'
     TARGET_DOMAIN = 'target.com'
 
+    def setUp(self):
+        super(TestTagCubeClient, self).setUp()
+
+        self.client = TagCubeClient(self.EMAIL, self.API_KEY)
+        self.client.set_verbose(True)
+
     @httpretty.activate
     def test_credentials_content_type_basic_request(self):
         url = "%s%s/profiles/" % (self.ROOT_URL, self.API_VERSION)
         httpretty.register_uri(httpretty.GET, url, body='[]',
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        scan_profile_resource = c.get_scan_profile('fast_scan')
+        scan_profile_resource = self.client.get_scan_profile('fast_scan')
 
         self.assertEqual(scan_profile_resource, None)
 
@@ -42,8 +47,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.GET, url, body=body,
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        scan_profile_resource = c.get_scan_profile('fast_scan')
+        scan_profile_resource = self.client.get_scan_profile('fast_scan')
 
         self.assertEqual(scan_profile_resource, json.loads(expected_json))
 
@@ -54,8 +58,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.GET, url, body='[]',
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        scan_profile_resource = c.get_scan_profile('fast_scan')
+        scan_profile_resource = self.client.get_scan_profile('fast_scan')
 
         self.assertEqual(scan_profile_resource, None)
 
@@ -66,8 +69,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.GET, url, body='[]',
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        self.assertRaises(ValueError, c.quick_scan, self.ROOT_URL,
+        self.assertRaises(ValueError, self.client.quick_scan, self.ROOT_URL,
                           scan_profile='not_exists')
 
     @httpretty.activate
@@ -84,8 +86,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.POST, url, body=json.dumps(_json),
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        _id, href = c.domain_add(self.TARGET_DOMAIN, 'A description')
+        _id, href = self.client.domain_add(self.TARGET_DOMAIN, 'A description')
 
         self.assertEqual(_id, '2')
         self.assertEqual(href, '/1.0/domains/2')
@@ -114,8 +115,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.GET, url, body=body,
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        email_resource = c.get_email_notification('abc@def.com')
+        email_resource = self.client.get_email_notification('abc@def.com')
 
         self.assertEqual(email_resource, json.loads(expected_json))
 
@@ -126,8 +126,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.GET, url, body='[]',
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        email_resource = c.get_email_notification('abc@def.com')
+        email_resource = self.client.get_email_notification('abc@def.com')
 
         self.assertEqual(email_resource, None)
 
@@ -147,8 +146,7 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.POST, url, body=post_answer,
                                content_type="application/json")
 
-        c = TagCubeClient(self.EMAIL, self.API_KEY)
-        email_id, email_resource = c.email_notification_add('abc@def.com',
+        email_id, email_resource = self.client.email_notification_add('abc@def.com',
                                                             'Andres', 'Riancho',
                                                             'Notification email')
 
@@ -169,3 +167,34 @@ class TestTagCubeClient(unittest.TestCase):
         self.assertEqual(request.method, 'POST')
         self.assertEqual(json.loads(request.body), json.loads(expected_sent_json))
         self.assertEqual(request.path, '/1.0/notifications/email/')
+
+    @httpretty.activate
+    def test_get_domain_exists(self):
+        url = "%s%s/domains/" % (self.ROOT_URL, self.API_VERSION)
+        expected_json = '''\
+        {
+            "domain": "www.fogfu.com",
+            "href": "/1.0/domains/2",
+            "id": 2,
+            "state": "pending-verification",
+            "verification_code": "46e06dde-43c6-4b31-88bd-6a0ffea42261"
+        }
+        '''
+        body = '[%s]' % expected_json
+        httpretty.register_uri(httpretty.GET, url, body=body,
+                               content_type="application/json")
+
+        domain_resource = self.client.get_domain('www.fogfu.com')
+
+        self.assertEqual(domain_resource, json.loads(expected_json))
+
+    @httpretty.activate
+    def test_get_domain_not_exists(self):
+        url = "%s%s/domains/" % (self.ROOT_URL, self.API_VERSION)
+
+        httpretty.register_uri(httpretty.GET, url, body='[]',
+                               content_type="application/json")
+
+        domain_resource = self.client.get_domain('www.fogfu.com')
+
+        self.assertEqual(domain_resource, None)

@@ -208,7 +208,7 @@ class TagCubeClient(object):
         :param domain: The domain to query
         :return: The domain resource (as json), or None
         """
-        return self.filter_resource('domain', 'domain', domain)
+        return self.filter_resource('domains', 'domain', domain)
 
     def domain_add(self, domain, description=DESCRIPTION):
         """
