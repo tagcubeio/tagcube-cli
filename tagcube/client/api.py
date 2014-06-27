@@ -23,6 +23,7 @@ class TagCubeClient(object):
     SELF_URL = '/users/~'
     DOMAINS = '/domains/'
     SCAN_PROFILES = '/profiles/'
+    DESCRIPTION = 'Created by TagCube REST API client'
 
     def __init__(self, email, api_key):
         self.email = email
@@ -87,7 +88,7 @@ class TagCubeClient(object):
 
         domain_resource = self.get_domain(domain)
         if domain_resource is None:
-            domain_resource = self.domain_add(domain)
+            _, domain_resource = self.domain_add(domain)
 
         if not self.can_scan(domain):
             raise ValueError(CAN_NOT_SCAN_DOMAIN_ERROR)
@@ -143,7 +144,14 @@ class TagCubeClient(object):
         """
         :return: The scan profile resource (as json), or None
         """
-        url = self.build_url('%s?name=%s' % (self.SCAN_PROFILES, scan_profile))
+        return self.filter_resource('profiles', 'name', scan_profile)
+
+    def filter_resource(self, resource_name, field_name, field_value):
+        """
+        :return: The resource (as json), or None
+        """
+        url = self.build_url('/%s/?%s=%s' % (resource_name, field_name,
+                                             field_value))
         code, json = self.send_request(url)
 
         if len(json) == 1:
@@ -155,13 +163,26 @@ class TagCubeClient(object):
         """
         :return: The email notification resource for notif_email, or None
         """
-        raise NotImplementedError
+        return self.filter_resource('notifications/email', 'email', notif_email)
 
-    def email_notification_add(self, notif_email):
+    def email_notification_add(self, notif_email, first_name='None',
+                               last_name='None', description=DESCRIPTION):
         """
+        Sends a POST to /1.0/notifications/email/ using this post-data:
+
+            {"email": "andres.riancho@gmail.com",
+             "first_name": "Andres",
+             "last_name": "Riancho",
+             "description": "Notification email"}
+
         :return: The id of the newly created email notification resource
         """
-        raise NotImplementedError
+        data = {"email": notif_email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "description": description}
+        url = self.build_url('/notifications/email/')
+        return self.create_resource(url, data)
 
     def can_scan(self, domain):
         """
@@ -174,14 +195,36 @@ class TagCubeClient(object):
         :param domain: The domain to query
         :return: The domain resource (as json), or None
         """
-        raise NotImplementedError
+        return self.filter_resource('domain', 'domain', domain)
 
-    def domain_add(self, domain):
+    def domain_add(self, domain, description=DESCRIPTION):
         """
+        Sends a POST to /1.0/domains/ using this post-data:
+
+            {"domain": "www.fogfu.com",
+             "description":"Added by tagcube-api"}
+
         :param domain: The domain name to add as a new resource
         :return: The newly created domain id
         """
-        raise NotImplementedError
+        data = {"domain": domain,
+                "description": description}
+        url = self.build_url(self.DOMAINS)
+        return self.create_resource(url, data)
+
+    def create_resource(self, url, data):
+        """
+        Shortcut for creating a new resource
+        :return: The newly created domain id
+        """
+        status_code, json_data = self.send_request(url, data, method='POST')
+        try:
+            return str(json_data['id']), json_data['href']
+        except KeyError:
+            # Parse the error and raise an exception, errors look like:
+            # {u'error': [u'The domain foo.com already exists.']}
+            error_string = u' '.join(json_data['error'])
+            raise TagCubeAPIException(error_string)
 
     def configure_requests(self):
         # We disable the logging of the requests module to avoid some infinite
@@ -204,7 +247,18 @@ class TagCubeClient(object):
         else:
             raise ValueError('Invalid HTTP method: "%s"' % method)
 
+        if response.status_code == 401:
+            raise IncorrectAPICredentials('Invalid TagCube API credentials')
+
         return response.status_code, response.json()
 
     def build_url(self, last_part):
         return '%s%s%s' % (self.ROOT_URL, self.API_VERSION, last_part)
+
+
+class TagCubeAPIException(Exception):
+    pass
+
+
+class IncorrectAPICredentials(Exception):
+    pass
