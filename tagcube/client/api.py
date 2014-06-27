@@ -54,7 +54,7 @@ class TagCubeClient(object):
         """
         :return: True when the credentials are properly configured.
         """
-        code, json = self.send_request(self.build_url(self.SELF_URL))
+        code, json = self.send_request(self.build_full_url(self.SELF_URL))
         return code == requests.codes.ok
 
     def quick_scan(self, target_url, email_notify=None,
@@ -176,7 +176,7 @@ class TagCubeClient(object):
                 "start_time": "now",
                 "email_notifications_href": [n.href for n in notification_resource_list],
                 "path_list": path_list}
-        url = self.build_url('/scans/')
+        url = self.build_full_url('/scans/')
         return self.create_resource(url, data)
 
     def get_scan_profile(self, scan_profile):
@@ -193,15 +193,22 @@ class TagCubeClient(object):
         """
         filter_dict = {'port': port,
                        'ssl': 'true' if is_ssl else 'false',
-                       'domain': domain_resource_id}
+                       'domain_href': domain_resource_id}
         return self.multi_filter_resource('verifications', filter_dict,
                                           result_handler=LATEST_RESULT)
 
     def multi_filter_resource(self, resource_name, filter_dict,
                               result_handler=ONE_RESULT):
-        url = self.build_url('/%s/?%s' % (resource_name,
-                                          urllib.urlencode(filter_dict)))
+        url = self.build_full_url('/%s/?%s' % (resource_name,
+                                               urllib.urlencode(filter_dict)))
         code, _json = self.send_request(url)
+
+        if isinstance(_json, dict) and 'error' in _json:
+            # Catch errors like this one:
+            #
+            # {"error": "Invalid resource lookup data provided
+            #            (mismatched type)."}
+            raise TagCubeAPIException(_json['error'])
 
         return RESULT_HANDLERS[result_handler](resource_name,
                                                filter_dict, _json)
@@ -237,7 +244,7 @@ class TagCubeClient(object):
                 "first_name": first_name,
                 "last_name": last_name,
                 "description": description}
-        url = self.build_url('/notifications/email/')
+        url = self.build_full_url('/notifications/email/')
         return self.create_resource(url, data)
 
     def can_scan(self, verification_resource):
@@ -289,7 +296,7 @@ class TagCubeClient(object):
         """
         data = {"domain": domain,
                 "description": description}
-        url = self.build_url(self.DOMAINS)
+        url = self.build_full_url(self.DOMAINS)
         return self.create_resource(url, data)
 
     def create_resource(self, url, data):
@@ -348,5 +355,8 @@ class TagCubeClient(object):
 
         return response.status_code, _json
 
-    def build_url(self, last_part):
+    def build_full_url(self, last_part):
         return '%s%s%s' % (self.ROOT_URL, self.API_VERSION, last_part)
+
+    def build_api_path(self, resource_name, last_part=''):
+        return '/%s/%s/%s' % (self.API_VERSION, resource_name, last_part)
