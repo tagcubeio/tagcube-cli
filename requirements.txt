@@ -1,1 +1,2 @@
 mock==1.0.1
+httpretty==0.8.3

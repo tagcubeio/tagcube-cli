@@ -18,9 +18,11 @@ You can't scan the specified domain. This happens in the following cases:
 
 class TagCubeClient(object):
 
-    ROOT_URL = 'https://www.tagcube.io/'
+    ROOT_URL = 'https://api.tagcube.io/'
     API_VERSION = '1.0'
     SELF_URL = '/users/~'
+    DOMAINS = '/domains/'
+    SCAN_PROFILES = '/profiles/'
 
     def __init__(self, email, api_key):
         self.email = email
@@ -124,6 +126,15 @@ class TagCubeClient(object):
             - get_email_notification
             - get_scan_profile
 
+        This method's last step is to send a POST request to /1.0/scans/ using
+        a post-data similar to:
+
+            {"verifications_href": "/1.0/verifications/6",
+             "profiles_href": "/1.0/profiles/2",
+             "start_time": "now",
+             "email_notifications_href": [],
+             "path_list": ["/"]}'
+
         :return: The newly generated scan id
         """
         raise NotImplementedError
@@ -132,7 +143,13 @@ class TagCubeClient(object):
         """
         :return: The scan profile resource (as json), or None
         """
-        raise NotImplementedError
+        url = self.build_url('%s?name=%s' % (self.SCAN_PROFILES, scan_profile))
+        code, json = self.send_request(url)
+
+        if len(json) == 1:
+            return json[0]
+
+        return None
 
     def get_email_notification(self, notif_email):
         """
