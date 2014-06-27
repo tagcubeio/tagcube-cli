@@ -6,9 +6,9 @@ def get_domain_from_url(url):
 
 
 def get_port_from_url(url):
-    if url.startswith('http://'):
+    if url.lower().startswith('http://'):
         default = '80'
-    elif url.startswith('https://'):
+    elif url.lower().startswith('https://'):
         default = '443'
     else:
         default = '80'
@@ -19,3 +19,7 @@ def get_port_from_url(url):
         return default
     else:
         return port
+
+
+def use_ssl(url):
+    return url.lower().startswith('https://')

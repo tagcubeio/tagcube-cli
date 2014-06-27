@@ -1,6 +1,7 @@
 import requests
 import logging
 import json
+import urllib
 
 # These two lines enable debugging at httplib level
 # (requests->urllib3->http.client) You will see the REQUEST, including HEADERS
@@ -13,7 +14,12 @@ except ImportError:
     import httplib as http_client
 
 
-from tagcube.utils.urlparsing import get_domain_from_url, get_port_from_url
+from tagcube.utils.exceptions import TagCubeAPIException, IncorrectAPICredentials
+from tagcube.utils.resource import Resource
+from tagcube.utils.result_handlers import (ONE_RESULT, LATEST_RESULT,
+                                           RESULT_HANDLERS)
+from tagcube.utils.urlparsing import (get_domain_from_url, use_ssl,
+                                      get_port_from_url)
 
 CAN_NOT_SCAN_DOMAIN_ERROR = '''\
 You can't scan the specified domain. This happens in the following cases:
@@ -95,16 +101,31 @@ class TagCubeClient(object):
             raise ValueError(msg % scan_profile)
 
         #
-        # Domain resource handling
+        # Domain verification handling
         #
         domain = get_domain_from_url(target_url)
+        port = get_port_from_url(target_url)
+        is_ssl = use_ssl(target_url)
 
+        # First, is there a domain resource to verify?
         domain_resource = self.get_domain(domain)
         if domain_resource is None:
-            _, domain_resource = self.domain_add(domain)
+            domain_resource = self.domain_add(domain)
 
-        if not self.can_scan(domain):
-            raise ValueError(CAN_NOT_SCAN_DOMAIN_ERROR)
+        verification_resource = self.get_latest_verification(domain_resource.id,
+                                                             port, is_ssl)
+
+        if verification_resource is None:
+            # This seems to be the first scan to this domain, we'll have to
+            # verify the client's ownership.
+            #
+            # Depending on the user's configuration, license, etc. this can
+            # succeed or fail
+            verification_resource = self.verification_add(domain_resource.id,
+                                                          port, is_ssl)
+
+            if not self.can_scan(verification_resource):
+                raise ValueError(CAN_NOT_SCAN_DOMAIN_ERROR)
 
         #
         # Email notification handling
@@ -117,28 +138,27 @@ class TagCubeClient(object):
         #
         # Scan!
         #
-        port = get_port_from_url(target_url)
-
-        return self.low_level_scan(domain_resource, port, scan_profile_resource,
+        return self.low_level_scan(verification_resource, scan_profile_resource,
                                    path_list, [email_notification_resource])
 
-    def low_level_scan(self, domain_resource, port, scan_profile_resource,
+    def low_level_scan(self, verification_resource, scan_profile_resource,
                        path_list, notification_resource_list):
         """
         Low level implementation of the scan launch which allows you to start
         a new scan when you already know the ids for the required resources.
 
-        :param domain_resource: The domain resource to scan
-        :param port: The TCP port to scan
+        :param verification_resource: The verification associated with the
+                                      domain resource to scan
         :param scan_profile_resource: The scan profile resource
         :param path_list: A list with the paths
         :param notification_resource_list: The notifications to use
 
         All the *_resource* parameters are obtained by calling the respective
         getters such as:
-            - get_domain
             - get_email_notification
             - get_scan_profile
+
+        And are expected to be of Resource type
 
         This method's last step is to send a POST request to /1.0/scans/ using
         a post-data similar to:
@@ -151,26 +171,49 @@ class TagCubeClient(object):
 
         :return: The newly generated scan id
         """
-        raise NotImplementedError
+        data = {"verifications_href": verification_resource.href,
+                "profiles_href": scan_profile_resource.href,
+                "start_time": "now",
+                "email_notifications_href": [n.href for n in notification_resource_list],
+                "path_list": path_list}
+        url = self.build_url('/scans/')
+        return self.create_resource(url, data)
 
     def get_scan_profile(self, scan_profile):
         """
-        :return: The scan profile resource (as json), or None
+        :return: The scan profile resource (as Resource), or None
         """
         return self.filter_resource('profiles', 'name', scan_profile)
 
-    def filter_resource(self, resource_name, field_name, field_value):
+    def get_latest_verification(self, domain_resource_id, port, is_ssl):
+        """
+        :return: A verification resource (as Resource), or None. If there is
+                 more than one verification resource available it will return
+                 the latest one (the one with the higher id attribute).
+        """
+        filter_dict = {'port': port,
+                       'ssl': 'true' if is_ssl else 'false',
+                       'domain': domain_resource_id}
+        return self.multi_filter_resource('verifications', filter_dict,
+                                          result_handler=LATEST_RESULT)
+
+    def multi_filter_resource(self, resource_name, filter_dict,
+                              result_handler=ONE_RESULT):
+        url = self.build_url('/%s/?%s' % (resource_name,
+                                          urllib.urlencode(filter_dict)))
+        code, _json = self.send_request(url)
+
+        return RESULT_HANDLERS[result_handler](resource_name,
+                                               filter_dict, _json)
+
+    def filter_resource(self, resource_name, field_name, field_value,
+                        result_handler=ONE_RESULT):
         """
         :return: The resource (as json), or None
         """
-        url = self.build_url('/%s/?%s=%s' % (resource_name, field_name,
-                                             field_value))
-        code, json = self.send_request(url)
-
-        if len(json) == 1:
-            return json[0]
-
-        return None
+        return self.multi_filter_resource(resource_name,
+                                          {field_name: field_value},
+                                          result_handler=result_handler)
 
     def get_email_notification(self, notif_email):
         """
@@ -197,11 +240,35 @@ class TagCubeClient(object):
         url = self.build_url('/notifications/email/')
         return self.create_resource(url, data)
 
-    def can_scan(self, domain):
+    def can_scan(self, verification_resource):
         """
+        Failed verifications look like this:
+            {
+                "domain": "/1.0/domains/5",
+                "href": "/1.0/verifications/2",
+                "id": 2,
+                "port": 80,
+                "ssl": false,
+                "success": false,
+                "verification_message": "The HTTP response body does NOT
+                                         contain the verification code."
+            }
+
+        Successful verifications look like this:
+            {
+                "domain": "/1.0/domains/2",
+                "href": "/1.0/verifications/3",
+                "id": 3,
+                "port": 80,
+                "ssl": false,
+                "success": true,
+                "verification_message": "Verification success"
+            }
+
         :return: True if the current user can scan the specified domain
+                 associated with the verification
         """
-        raise NotImplementedError
+        raise verification_resource.success
 
     def get_domain(self, domain):
         """
@@ -218,7 +285,7 @@ class TagCubeClient(object):
              "description":"Added by tagcube-api"}
 
         :param domain: The domain name to add as a new resource
-        :return: The newly created domain id
+        :return: The newly created resource
         """
         data = {"domain": domain,
                 "description": description}
@@ -228,11 +295,11 @@ class TagCubeClient(object):
     def create_resource(self, url, data):
         """
         Shortcut for creating a new resource
-        :return: The newly created domain id
+        :return: The newly created resource as a Resource object
         """
         status_code, json_data = self.send_request(url, data, method='POST')
         try:
-            return str(json_data['id']), json_data['href']
+            return Resource(json_data)
         except KeyError:
             # Parse the error and raise an exception, errors look like:
             # {u'error': [u'The domain foo.com already exists.']}
@@ -275,15 +342,11 @@ class TagCubeClient(object):
         if response.status_code == 401:
             raise IncorrectAPICredentials('Invalid TagCube API credentials')
 
-        return response.status_code, response.json()
+        _json = response.json()
+        p_json = json.dumps(_json, indent=4)
+        logging.debug('Received HTTP response body from the wire:\n%s' % p_json)
+
+        return response.status_code, _json
 
     def build_url(self, last_part):
         return '%s%s%s' % (self.ROOT_URL, self.API_VERSION, last_part)
-
-
-class TagCubeAPIException(Exception):
-    pass
-
-
-class IncorrectAPICredentials(Exception):
-    pass

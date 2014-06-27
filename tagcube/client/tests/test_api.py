@@ -86,10 +86,11 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.POST, url, body=json.dumps(_json),
                                content_type="application/json")
 
-        _id, href = self.client.domain_add(self.TARGET_DOMAIN, 'A description')
+        domain_resource = self.client.domain_add(self.TARGET_DOMAIN,
+                                                 'A description')
 
-        self.assertEqual(_id, '2')
-        self.assertEqual(href, '/1.0/domains/2')
+        self.assertEqual(domain_resource.id, 2)
+        self.assertEqual(domain_resource.href, '/1.0/domains/2')
 
         request = httpretty.last_request()
 
@@ -146,12 +147,13 @@ class TestTagCubeClient(unittest.TestCase):
         httpretty.register_uri(httpretty.POST, url, body=post_answer,
                                content_type="application/json")
 
-        email_id, email_resource = self.client.email_notification_add('abc@def.com',
+        email_resource = self.client.email_notification_add('abc@def.com',
                                                             'Andres', 'Riancho',
                                                             'Notification email')
 
-        self.assertEqual(email_id, '1')
-        self.assertEqual(email_resource, '/%s/notifications/email/1' % self.API_VERSION)
+        self.assertEqual(email_resource.id, 1)
+        self.assertEqual(email_resource.href,
+                         '/%s/notifications/email/1' % self.API_VERSION)
 
         expected_sent_json = '''\
         {
