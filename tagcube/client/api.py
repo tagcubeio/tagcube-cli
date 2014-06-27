@@ -2,6 +2,17 @@ import requests
 import logging
 import json
 
+# These two lines enable debugging at httplib level
+# (requests->urllib3->http.client) You will see the REQUEST, including HEADERS
+# and DATA, and RESPONSE with HEADERS but without DATA.
+# The only thing missing will be the response.body which is not logged.
+try:
+    import http.client as http_client
+except ImportError:
+    # Python 2
+    import httplib as http_client
+
+
 from tagcube.utils.urlparsing import get_domain_from_url, get_port_from_url
 
 CAN_NOT_SCAN_DOMAIN_ERROR = '''\
@@ -25,10 +36,12 @@ class TagCubeClient(object):
     SCAN_PROFILES = '/profiles/'
     DESCRIPTION = 'Created by TagCube REST API client'
 
-    def __init__(self, email, api_key):
+    def __init__(self, email, api_key, verbose=False):
         self.email = email
         self.api_key = api_key
         self.session = None
+
+        self.set_verbose(verbose)
         self.configure_requests()
 
     def test_auth_credentials(self):
@@ -226,15 +239,27 @@ class TagCubeClient(object):
             error_string = u' '.join(json_data['error'])
             raise TagCubeAPIException(error_string)
 
-    def configure_requests(self):
-        # We disable the logging of the requests module to avoid some infinite
-        # recursion errors that might appear.
-        requests_log = logging.getLogger("requests")
-        requests_log.setLevel(logging.CRITICAL)
+    def set_verbose(self, verbose):
+        level = logging.DEBUG if verbose else logging.CRITICAL
+        http_client.HTTPConnection.debuglevel = 1 if verbose else 0
 
+        logging.basicConfig()
+        logging.getLogger().setLevel(level)
+
+        requests_log = logging.getLogger("requests.packages.urllib3")
+        requests_log.setLevel(level)
+        requests_log.propagate = True
+
+        requests_log = logging.getLogger("requests")
+        requests_log.setLevel(level)
+
+    def configure_requests(self):
         self.session = requests.Session()
         self.session.auth = (self.email, self.api_key)
-        self.session.headers.update({'Content-Type': 'application/json'})
+
+        headers = {'Content-Type': 'application/json',
+                   'User-Agent': 'TagCubeClient %s' % self.API_VERSION}
+        self.session.headers.update(headers)
 
     def send_request(self, url, json_data=None, method='GET'):
         if method == 'GET':
