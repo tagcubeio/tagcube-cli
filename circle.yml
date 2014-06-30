@@ -1,0 +1,7 @@
+test:
+  override:
+
+    - "pylint --rcfile=api/utils/ci/pylint.rc `ls -d */`"
+
+    - python -W ignore::DeprecationWarning -W ignore::RuntimeWarning manage.py test
+    
