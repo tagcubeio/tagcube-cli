@@ -17,7 +17,7 @@ class TestTagCubeClient(unittest.TestCase):
         super(TestTagCubeClient, self).setUp()
 
         self.client = TagCubeClient(self.EMAIL, self.API_KEY)
-        self.client.set_verbose(True)
+        #self.client.set_verbose(True)
 
     @httpretty.activate
     def test_credentials_content_type_basic_request(self):
