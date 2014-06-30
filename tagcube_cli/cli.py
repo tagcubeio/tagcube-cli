@@ -2,11 +2,12 @@ import argparse
 import logging
 
 from tagcube import TagCubeClient
-from tagcube.utils.exceptions import IncorrectAPICredentials
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                path_file_to_list, is_valid_email,
                                CustomArgParser, CustomHelpFormatter)
 
+
+cli_logger = logging.getLogger(__name__)
 
 DESCRIPTION = 'TagCube client - %s' % TagCubeClient.ROOT_URL
 EPILOG = '''\
@@ -44,7 +45,7 @@ class TagCubeCLI(object):
         * Launches a scan
     """
     def __init__(self, email, api_key, cmd_args):
-        self.client = TagCubeClient(email, api_key)
+        self.client = TagCubeClient(email, api_key, verbose=cmd_args.verbose)
         self.cmd_args = cmd_args
 
     @classmethod
@@ -78,14 +79,14 @@ class TagCubeCLI(object):
         if not self.client.test_auth_credentials():
             raise ValueError('Invalid TagCube REST API credentials.')
 
-        logging.info('TagCube credentials are valid')
+        cli_logger.info('TagCube credentials are valid')
 
     def handle_scan_start(self):
         if not self.client.test_auth_credentials():
             raise ValueError('Invalid TagCube REST API credentials.')
 
-        logging.debug('Authentication credentials are valid')
-        logging.debug('Starting web application scan')
+        cli_logger.debug('Authentication credentials are valid')
+        cli_logger.debug('Starting web application scan')
 
         scan_resource = self.client.quick_scan(self.cmd_args.target_url,
                                                email_notify=self.cmd_args.email_notify,
@@ -93,7 +94,7 @@ class TagCubeCLI(object):
                                                path_list=self.cmd_args.path_list)
 
         # pylint: disable=E1101
-        logging.info('Launched scan with id #%s' % scan_resource.id)
+        cli_logger.info('Launched scan with id #%s' % scan_resource.id)
         # pylint: enable=E1101
 
     @staticmethod
@@ -202,7 +203,14 @@ class TagCubeCLI(object):
             cmd_args.path_list = ['/']
 
         level = logging.DEBUG if cmd_args.verbose else logging.INFO
-        logging.basicConfig(format='%(message)s', level=level)
+        cli_logger.setLevel(level=level)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(level)
+
+        formatter = logging.Formatter('%(message)s')
+        ch.setFormatter(formatter)
+        cli_logger.addHandler(ch)
 
         return cmd_args
 
@@ -220,19 +228,19 @@ class TagCubeCLI(object):
         # Check the cmd args, return if we have something here
         cmd_credentials = cmd_args.tagcube_email, cmd_args.tagcube_api_key
         if cmd_credentials != (None, None):
-            logging.debug('Using command line configured credentials')
+            cli_logger.debug('Using command line configured credentials')
             return cmd_credentials
 
         env_email, env_api_key = get_config_from_env()
         if env_email is not None:
             if env_api_key is not None:
-                logging.debug('Using environment configured credentials')
+                cli_logger.debug('Using environment configured credentials')
                 return env_email, env_api_key
 
         cfg_email, cfg_api_key = parse_config_file()
         if cfg_email is not None:
             if cfg_api_key is not None:
-                logging.debug('Using .tagcube file configured credentials')
+                cli_logger.debug('Using .tagcube file configured credentials')
                 return cfg_email, cfg_api_key
 
         raise ValueError('No credentials provided at: command line argument,'

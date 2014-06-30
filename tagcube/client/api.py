@@ -22,6 +22,8 @@ from tagcube.utils.result_handlers import (ONE_RESULT, LATEST_RESULT,
 from tagcube.utils.urlparsing import (get_domain_from_url, use_ssl,
                                       get_port_from_url)
 
+api_logger = logging.getLogger(__name__)
+
 CAN_NOT_SCAN_DOMAIN_ERROR = '''\
 You can't scan the specified domain. This happens in the following cases:
 
@@ -38,11 +40,14 @@ class TagCubeClient(object):
 
     ROOT_DOMAIN = os.environ.get('ROOT_DOMAIN', None) or 'api.tagcube.io'
     ROOT_URL = 'https://%s/' % ROOT_DOMAIN
+
     API_VERSION = '1.0'
+
     SELF_URL = '/users/~'
     DOMAINS = '/domains/'
     VERIFICATIONS = '/verifications/'
     SCAN_PROFILES = '/profiles/'
+
     DESCRIPTION = 'Created by TagCube REST API client'
 
     def __init__(self, email, api_key, verbose=False):
@@ -342,18 +347,28 @@ class TagCubeClient(object):
             raise TagCubeAPIException(error_string)
 
     def set_verbose(self, verbose):
+        # Get level based on verbose boolean
         level = logging.DEBUG if verbose else logging.CRITICAL
-        http_client.HTTPConnection.debuglevel = 1 if verbose else 0
 
-        logging.basicConfig()
-        logging.getLogger().setLevel(level)
+        # Configure my own logger
+        api_logger.setLevel(level=level)
 
+        ch = logging.StreamHandler()
+        ch.setLevel(level)
+
+        formatter = logging.Formatter('%(message)s')
+        ch.setFormatter(formatter)
+        api_logger.addHandler(ch)
+
+        # Configure the loggers for urllib3, requests and httplib
         requests_log = logging.getLogger("requests.packages.urllib3")
         requests_log.setLevel(level)
         requests_log.propagate = True
 
         requests_log = logging.getLogger("requests")
         requests_log.setLevel(level)
+
+        http_client.HTTPConnection.debuglevel = 1 if verbose else 0
 
     def configure_requests(self):
         self.session = requests.Session()
@@ -379,7 +394,7 @@ class TagCubeClient(object):
 
         _json = response.json()
         p_json = json.dumps(_json, indent=4)
-        logging.debug('Received HTTP response body from the wire:\n%s' % p_json)
+        api_logger.debug('Received HTTP response body from the wire:\n%s' % p_json)
 
         return response.status_code, _json
 
