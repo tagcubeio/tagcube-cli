@@ -73,7 +73,7 @@ class TestTagCubeClient(unittest.TestCase):
                           scan_profile='not_exists')
 
     @httpretty.activate
-    def test_quick_scan_invalid_profile(self):
+    def test_domain_add(self):
         url = "%s%s/domains/" % (self.ROOT_URL, self.API_VERSION)
 
         _json = {"id": 2,
@@ -89,8 +89,10 @@ class TestTagCubeClient(unittest.TestCase):
         domain_resource = self.client.domain_add(self.TARGET_DOMAIN,
                                                  'A description')
 
+        # pylint: disable=E1101
         self.assertEqual(domain_resource.id, 2)
         self.assertEqual(domain_resource.href, '/1.0/domains/2')
+        # pylint: enable=E1101
 
         request = httpretty.last_request()
 
@@ -151,9 +153,11 @@ class TestTagCubeClient(unittest.TestCase):
                                                             'Andres', 'Riancho',
                                                             'Notification email')
 
+        # pylint: disable=E1101
         self.assertEqual(email_resource.id, 1)
         self.assertEqual(email_resource.href,
                          '/%s/notifications/email/1' % self.API_VERSION)
+        # pylint: enable=E1101
 
         expected_sent_json = '''\
         {

@@ -92,7 +92,9 @@ class TagCubeCLI(object):
                                                scan_profile=self.cmd_args.scan_profile,
                                                path_list=self.cmd_args.path_list)
 
+        # pylint: disable=E1101
         logging.info('Launched scan with id #%s' % scan_resource.id)
+        # pylint: enable=E1101
 
     @staticmethod
     def parse_args(args=None):

@@ -62,7 +62,7 @@ class TagCubeClient(object):
         except IncorrectAPICredentials:
             return False
         else:
-            return code == requests.codes.ok
+            return code == 200
 
     def quick_scan(self, target_url, email_notify=None,
                    scan_profile='full_audit', path_list=('/',)):
