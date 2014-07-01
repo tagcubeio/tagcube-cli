@@ -308,7 +308,7 @@ class TagCubeClient(object):
         :return: True if the current user can scan the specified domain
                  associated with the verification
         """
-        raise verification_resource.success
+        return verification_resource.success
 
     def get_domain(self, domain):
         """
