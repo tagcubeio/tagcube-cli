@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from os.path import join, dirname
 
 setup(
-      name='tagcube_cli',
+      name='tagcube-cli',
 
       version='0.1.0',
       license = 'GNU General Public License v2 (GPLv2)',

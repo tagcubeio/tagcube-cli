@@ -99,6 +99,22 @@ Another way to provide ``tagcube-cli`` with the REST API credentials is to set
 the ``TAGCUBE_EMAIL`` and ``TAGCUBE_API_KEY`` environment variables. These are
 convenient to avoid hard-coding credentials in scripts or source code.
 
+Integration with continuous delivery
+====================================
+
+Adding security to your continuous delivery process is trivial using TagCube,
+we recommend adding these two lines after the code is pushed to the servers:
+
+::
+
+    pip install --upgrade tagcube-cli
+    tagcube-cli --target-url=http://target.com
+
+While in most cases its recommend to be specific about the version of any
+external package installed using ``pip``, we recommend a more relaxed installation
+process for ``tagcube-cli`` which allows us to frequently push upgrades to our
+customers.
+
 Reporting bugs
 ==============
 
