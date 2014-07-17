@@ -19,7 +19,7 @@ URL as parameter:
 
     $ export TAGCUBE_EMAIL=user@example.com
     $ export TAGCUBE_API_KEY=`cat key.txt`
-    $ tagcube-cli --target-url=http://domain.com
+    $ tagcube-cli http://domain.com
     Web application scan for "http://domain.com/" successfully started at TagCube cloud.
 
 This will create the new domain resource in TagCube's REST API and start a new
@@ -42,7 +42,7 @@ when it finishes
 
 ::
 
-    $ tagcube-cli --target-url=http://target.com
+    $ tagcube-cli http://target.com
 
 
 Run a scan with a custom profile, enabling verbose mode and notifying a
@@ -50,7 +50,7 @@ different email address when the scan finishes
 
 ::
 
-    $ tagcube-cli --target-url=http://target.com --email-notify=other@example.com \
+    $ tagcube-cli http://target.com --email-notify=other@example.com \
                   --scan-profile=fast_scan -v
 
 Provide TagCube's REST API credentials as command line arguments. Read the
@@ -59,7 +59,7 @@ variables or the .tagcube file
 
 ::
 
-    $ tagcube-cli --target-url=http://target.com  --tagcube-email=user@example.com \\
+    $ tagcube-cli http://target.com  --tagcube-email=user@example.com \\
                   --tagcube-api-key=...
 
 Verify that the configured credentials are working
@@ -108,7 +108,7 @@ we recommend adding these two lines after the code is pushed to the servers:
 ::
 
     pip install --upgrade tagcube-cli
-    tagcube-cli --target-url=http://target.com
+    tagcube-cli http://target.com
 
 While in most cases its recommend to be specific about the version of any
 external package installed using ``pip``, we recommend a more relaxed installation

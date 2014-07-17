@@ -18,19 +18,19 @@ examples:\n
  * Run a scan to http://target.com/, notify the REST API username email address
    when it finishes
 
-        tagcube-cli --target-url=http://target.com
+        tagcube-cli http://target.com
 
  * Run a scan with a custom profile, enabling verbose mode and notifying a
    different email address when the scan finishes
 
-        tagcube-cli --target-url=http://target.com --email-notify=other@example.com \\
+        tagcube-cli http://target.com --email-notify=other@example.com \\
                     --scan-profile=fast_scan -v
 
  * Provide TagCube's REST API credentials as command line arguments. Read the
    documentation to find how to provide REST API credentials using environment
    variables or the .tagcube file
 
-        tagcube-cli --target-url=http://target.com  --tagcube-email=user@example.com \\
+        tagcube-cli http://target.com  --tagcube-email=user@example.com \\
                     --tagcube-api-key=...
 
  * Verify that the configured credentials are working
@@ -93,7 +93,7 @@ class TagCubeCLI(object):
         cli_logger.debug('Authentication credentials are valid')
         cli_logger.debug('Starting web application scan')
 
-        scan_resource = self.client.quick_scan(self.cmd_args.target_url,
+        scan_resource = self.client.quick_scan(self.cmd_args.url,
                                                email_notify=self.cmd_args.email_notify,
                                                scan_profile=self.cmd_args.scan_profile,
                                                path_list=self.cmd_args.path_list)
@@ -112,9 +112,8 @@ class TagCubeCLI(object):
                                  epilog=EPILOG,
                                  formatter_class=CustomHelpFormatter)
 
-        parser.add_argument('--target-url',
-                            required=False,
-                            dest='target_url',
+        parser.add_argument('url',
+                            default=None, nargs='?',
                             help='URL for web application security scan.'
                                  '(e.g. https://www.target.com/)')
 
@@ -179,16 +178,16 @@ class TagCubeCLI(object):
             # When auth_test is specified, we'll just perform that action and
             # exit, so all the other parameters are ignored. We want to enforce
             # that action here
-            if cmd_args.target_url is not None or\
+            if cmd_args.url is not None or\
             cmd_args.email_notify is not None:
-                parser.error('--target-url and --email-notify should not be'
+                parser.error('Target URL and --email-notify should not be'
                              ' set when --auth-test is.')
         else:
-            if cmd_args.target_url is None:
-                parser.error('argument --target-url is required')
-            elif not (cmd_args.target_url.startswith('http://') or \
-                      cmd_args.target_url.startswith('https://')):
-                parser.error('Invalid target URL: "%s"' % cmd_args.target_url)
+            if cmd_args.url is None:
+                parser.error('Positional argument url is required')
+            elif not (cmd_args.url.startswith('http://') or \
+                      cmd_args.url.startswith('https://')):
+                parser.error('Invalid target URL: "%s"' % cmd_args.url)
 
         if cmd_args.tagcube_email is not None:
             if not is_valid_email(cmd_args.tagcube_email):

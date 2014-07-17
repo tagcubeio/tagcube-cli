@@ -10,7 +10,7 @@ from tagcube_cli.cli import TagCubeCLI
 
 class TestTagCubeCLI(unittest.TestCase):
 
-    SIMPLE_ARGS = ['--target-url=http://target.com']
+    SIMPLE_ARGS = ['http://target.com']
     TAGCUBE_FILE = '.tagcube'
     TAGCUBE_FILE_BACKUP = '.tagcube-unittest-backup'
 
