@@ -59,7 +59,7 @@ variables or the .tagcube file
 
 ::
 
-    $ tagcube-cli http://target.com  --tagcube-email=user@example.com \\
+    $ tagcube-cli http://target.com  --tagcube-email=user@example.com \
                   --tagcube-api-key=...
 
 Verify that the configured credentials are working
