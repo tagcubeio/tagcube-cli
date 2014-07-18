@@ -115,6 +115,12 @@ external package installed using ``pip``, we recommend a more relaxed installati
 process for ``tagcube-cli`` which allows us to frequently push upgrades to our
 customers.
 
+More info
+=========
+
+A more detailed documentation which includes tutorials and example usages can
+be found at `TagCube's site <https://www.tagcube.io/docs/cli/>`_
+
 Reporting bugs
 ==============
 
