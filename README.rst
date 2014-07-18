@@ -119,7 +119,7 @@ Reporting bugs
 ==============
 
 Report your issues and feature requests in `tagcube-cli's issue
-tracker <https://github.com/andresriancho/tagcube-cli/issues>`_ and we'll
+tracker <https://github.com/tagcubeio/tagcube-cli/issues>`_ and we'll
 be more than glad to fix them.
 
 Pull requests are more than welcome!

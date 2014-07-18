@@ -16,7 +16,7 @@ setup(
       
       author='TagCube',
       author_email='support@tagcube.io',
-      url='https://github.com/andresriancho/tagcube-cli/',
+      url='https://github.com/tagcubeio/tagcube-cli/',
       
       packages=find_packages(),
       include_package_data=True,
