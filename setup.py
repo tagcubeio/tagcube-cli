@@ -6,7 +6,7 @@ from os.path import join, dirname
 setup(
       name='tagcube-cli',
 
-      version='0.1.0',
+      version='0.1.1',
       license = 'GNU General Public License v2 (GPLv2)',
       platforms='Linux',
       

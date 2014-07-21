@@ -4,10 +4,10 @@ TagCube's CLI tool
 Launch web application security scans using `TagCube's REST API <https://www.tagcube.io>`_,
 commonly used in continuous delivery scripts.
 
-.. image:: https://circleci.com/gh/andresriancho/tagcube-cli.png?circle-token=dc4aa96d817b9d41baf6778f2db9b3fe87d6b5e2
+.. image:: https://circleci.com/gh/tagcubeio/tagcube-cli.png?circle-token=5317e457dceef210130d20e0452eff7abf1d195b
    :alt: Build Status
    :align: right
-   :target: https://circleci.com/gh/andresriancho/tagcube-cli
+   :target: https://circleci.com/gh/tagcubeio/tagcube-cli
    
 Usage
 =====
