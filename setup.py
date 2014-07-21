@@ -20,7 +20,7 @@ setup(
       
       packages=find_packages(),
       include_package_data=True,
-      install_requires=['requests', 'PyYAML'],
+      install_requires=['requests>=2.3.0', 'PyYAML>=3.11'],
 
       entry_points={
           'console_scripts':
