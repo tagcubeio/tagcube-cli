@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 
 echo "[server-login]" > ~/.pypirc
 echo "username:" $PYPI_USER >> ~/.pypirc
