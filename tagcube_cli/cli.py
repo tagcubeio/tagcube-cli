@@ -12,7 +12,7 @@ from tagcube_cli.utils import (parse_config_file, get_config_from_env,
 
 cli_logger = logging.getLogger(__name__)
 
-DESCRIPTION = 'TagCube client - %s' % TagCubeClient.ROOT_URL
+DESCRIPTION = 'TagCube client - %s' % TagCubeClient.DEFAULT_ROOT_URL
 EPILOG = '''\
 examples:\n
 

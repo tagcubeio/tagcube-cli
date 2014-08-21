@@ -7,7 +7,7 @@ from tagcube.client.api import TagCubeClient
 
 class TestTagCubeClient(unittest.TestCase):
 
-    ROOT_URL = TagCubeClient.ROOT_URL
+    ROOT_URL = TagCubeClient.DEFAULT_ROOT_URL
     API_VERSION = TagCubeClient.API_VERSION
     EMAIL = 'foo@bar.com'
     API_KEY = 'f364b098-0fb3-4178-a45b-883f389ad294'
