@@ -18,14 +18,12 @@ def main():
         sys.exit(1)
 
     try:
-        tagcube_cli.run()
+        sys.exit(tagcube_cli.run())
     except ValueError, ve:
         # We get here when the configured credentials had some issue (invalid)
         # or there was some error (such as invalid profile name) with the params
         print '%s' % ve
         sys.exit(2)
-
-    sys.exit(0)
 
 
 if __name__ == '__main__':

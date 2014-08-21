@@ -338,6 +338,11 @@ class TagCubeClient(object):
         :return: The newly created resource as a Resource object
         """
         status_code, json_data = self.send_request(url, data, method='POST')
+
+        if status_code != 201:
+            msg = 'Expected 201 status code, got %s. Failed to create resource.'
+            raise TagCubeAPIException(msg % status_code)
+
         try:
             return Resource(json_data)
         except KeyError:
@@ -378,6 +383,21 @@ class TagCubeClient(object):
                    'User-Agent': 'TagCubeClient %s' % self.API_VERSION}
         self.session.headers.update(headers)
 
+    def handle_api_errors(self, json_data):
+        """
+        This method parses all the HTTP responses sent by the REST API and
+        raises exceptions if required. Basically tries to find responses with
+        this format:
+
+            {u'error': [u'The domain foo.com already exists.']}
+
+        And raise TagCubeAPIException
+        """
+        if 'error' in json_data and len(json_data) == 1 \
+        and isinstance(json_data, dict) and isinstance(json_data['error'], list):
+            error_string = u' '.join(json_data['error'])
+            raise TagCubeAPIException(error_string)
+
     def send_request(self, url, json_data=None, method='GET'):
         if method == 'GET':
             response = self.session.get(url)
@@ -392,11 +412,16 @@ class TagCubeClient(object):
         if response.status_code == 401:
             raise IncorrectAPICredentials('Invalid TagCube API credentials')
 
-        _json = response.json()
-        p_json = json.dumps(_json, indent=4)
-        api_logger.debug('Received HTTP response body from the wire:\n%s' % p_json)
+        json_data = response.json()
 
-        return response.status_code, _json
+        pretty_json = json.dumps(json_data, indent=4)
+        msg = 'Received HTTP response body from the wire:\n%s'
+        api_logger.debug(msg % pretty_json)
+
+        # Error handling
+        self.handle_api_errors(json_data)
+
+        return response.status_code, json_data
 
     def build_full_url(self, last_part):
         return '%s%s%s' % (self.ROOT_URL, self.API_VERSION, last_part)

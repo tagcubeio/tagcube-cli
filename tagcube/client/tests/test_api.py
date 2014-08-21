@@ -84,7 +84,7 @@ class TestTagCubeClient(unittest.TestCase):
                  "verification_code": "46e06dde-43c6-4b31-88bd-6a0ffea42261"}
 
         httpretty.register_uri(httpretty.POST, url, body=json.dumps(_json),
-                               content_type="application/json")
+                               content_type="application/json", status=201)
 
         domain_resource = self.client.domain_add(self.TARGET_DOMAIN,
                                                  'A description')
@@ -147,7 +147,7 @@ class TestTagCubeClient(unittest.TestCase):
         }'''
 
         httpretty.register_uri(httpretty.POST, url, body=post_answer,
-                               content_type="application/json")
+                               content_type="application/json", status=201)
 
         email_resource = self.client.email_notification_add('abc@def.com',
                                                             'Andres', 'Riancho',

@@ -4,6 +4,7 @@ import logging
 from requests.exceptions import ConnectionError
 
 from tagcube import TagCubeClient
+from tagcube.utils.exceptions import TagCubeAPIException
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                path_file_to_list, is_valid_email,
                                CustomArgParser, CustomHelpFormatter)
@@ -36,6 +37,7 @@ examples:\n
  * Verify that the configured credentials are working
 
         tagcube-cli --auth-test
+
 '''
 
 
@@ -60,12 +62,22 @@ class TagCubeCLI(object):
         This method handles the user's command line arguments, for example, if
         the user specified a path file we'll open it and read the contents.
         Finally it will run the scan using TagCubeClient.scan(...)
+
+        :return: The exit code for our process
         """
         try:
             handler = self.choose_handler()
             handler()
+
         except ConnectionError:
             cli_logger.error('Failed to connect to TagCube\'s REST API.')
+            return 3
+
+        except TagCubeAPIException, tae:
+            cli_logger.error('%s' % tae)
+            return 4
+
+        return 0
 
     def choose_handler(self):
         """
