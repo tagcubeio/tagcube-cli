@@ -1,7 +1,18 @@
 #!/usr/bin/env python
+import os
 
 from setuptools import setup, find_packages
 from os.path import join, dirname
+
+if os.environ.get('CIRCLECI', None) is not None:
+    # monkey-patch distutils upload
+    #
+    # http://bugs.python.org/issue21722
+    # https://github.com/tagcubeio/tagcube-cli/issues/4
+    from distutils.command import upload as old_upload_module
+    from ci.upload import upload as fixed_upload
+    old_upload_module.upload = fixed_upload
+
 
 setup(
       name='tagcube-cli',
@@ -18,7 +29,7 @@ setup(
       author_email='support@tagcube.io',
       url='https://github.com/tagcubeio/tagcube-cli/',
       
-      packages=find_packages(),
+      packages=find_packages(exclude=('ci',)),
       include_package_data=True,
       install_requires=['requests>=2.3.0', 'PyYAML>=3.11'],
 
