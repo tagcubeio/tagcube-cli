@@ -383,19 +383,44 @@ class TagCubeClient(object):
                    'User-Agent': 'TagCubeClient %s' % self.API_VERSION}
         self.session.headers.update(headers)
 
-    def handle_api_errors(self, json_data):
+    def handle_api_errors(self, status_code, json_data):
         """
         This method parses all the HTTP responses sent by the REST API and
         raises exceptions if required. Basically tries to find responses with
         this format:
 
-            {u'error': [u'The domain foo.com already exists.']}
+            {
+                'error': ['The domain foo.com already exists.']
+            }
 
-        And raise TagCubeAPIException
+        Or this other:
+            {
+                "scans": {
+                    "__all__": [
+                        "Not a verified domain. You need to verify..."
+                    ]
+                }
+            }
+
+        And raise TagCubeAPIException with the correct message.
+
+        :param status_code: The HTTP response code
+        :param json_data: The HTTP response body decoded as JSON
         """
-        if 'error' in json_data and len(json_data) == 1 \
+        error_list = []
+
+        if status_code == 400:
+            for main_error_key in json_data:
+                for sub_error_key in json_data[main_error_key]:
+                    error_list.extend(json_data[main_error_key][sub_error_key])
+
+        elif 'error' in json_data and len(json_data) == 1 \
         and isinstance(json_data, dict) and isinstance(json_data['error'], list):
-            error_string = u' '.join(json_data['error'])
+            error_list = json_data['error']
+
+        # Only raise an exception if we had any errors
+        if error_list:
+            error_string = u' '.join(error_list)
             raise TagCubeAPIException(error_string)
 
     def send_request(self, url, json_data=None, method='GET'):
@@ -415,11 +440,11 @@ class TagCubeClient(object):
         json_data = response.json()
 
         pretty_json = json.dumps(json_data, indent=4)
-        msg = 'Received HTTP response body from the wire:\n%s'
-        api_logger.debug(msg % pretty_json)
+        msg = 'Received %s HTTP response from the wire:\n%s'
+        api_logger.debug(msg % (response.status_code, pretty_json))
 
         # Error handling
-        self.handle_api_errors(json_data)
+        self.handle_api_errors(response.status_code, json_data)
 
         return response.status_code, json_data
 
