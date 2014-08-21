@@ -36,6 +36,7 @@ examples:\n
  * Verify that the configured credentials are working
 
         tagcube-cli --auth-test
+
 '''
 
 
