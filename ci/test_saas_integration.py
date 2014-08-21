@@ -11,9 +11,13 @@ from tagcube.client.api import TagCubeClient
 class TestTagCubeSaaSIntegration(unittest.TestCase):
 
     TARGET_URL = 'http://www.fogfu.com/'
+
     STAGING_ROOT_URL = os.environ.get('STAGING_ROOT_URL')
-    TAGCUBE_API_KEY = os.environ.get('TAGCUBE_API_KEY')
-    TAGCUBE_EMAIL = os.environ.get('TAGCUBE_EMAIL')
+
+    BRANCH = os.environ.get('CIRCLE_BRANCH', 'DEVELOP').upper()
+    TAGCUBE_API_KEY = os.environ.get('TAGCUBE_API_KEY_%s' % BRANCH)
+    TAGCUBE_EMAIL = os.environ.get('TAGCUBE_EMAIL_%s' % BRANCH)
+
     TAGCUBE_SCAN_CMD_FMT = 'tagcube-cli --scan-profile=fast_scan -v %s'
     TAGCUBE_AUTH_CMD = 'tagcube-cli -v --auth-test'
 
