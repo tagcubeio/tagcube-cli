@@ -11,9 +11,15 @@ if os.environ.get('CIRCLECI', None) is not None:
     #
     # http://bugs.python.org/issue21722
     # https://github.com/tagcubeio/tagcube-cli/issues/4
-    from distutils.command import upload as old_upload_module
-    from ci.upload import upload as fixed_upload
-    old_upload_module.upload = fixed_upload
+    try:
+        from distutils.command import upload as old_upload_module
+        from ci.upload import upload as fixed_upload
+        old_upload_module.upload = fixed_upload
+    except ImportError:
+
+        # In some cases I install tagcube-cli in CircleCI, but not from the
+        # repository where the ci module is present
+        pass
 
 
 setup(
