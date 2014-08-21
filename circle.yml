@@ -5,8 +5,6 @@ test:
 
     - python -W ignore::DeprecationWarning -W ignore::RuntimeWarning setup.py test
 
-    - nosetests -s -v ci/test_saas_integration.py
-
 deployment:
   pypi:
     branch: master
