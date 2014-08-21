@@ -22,6 +22,10 @@ class TestTagCubeSaaSIntegration(unittest.TestCase):
     TAGCUBE_AUTH_CMD = 'tagcube-cli -v --auth-test'
 
     def setUp(self):
+        # Translate TAGCUBE_EMAIL_DEVELOP into TAGCUBE_EMAIL
+        os.environ['TAGCUBE_API_KEY'] = self.TAGCUBE_API_KEY
+        os.environ['TAGCUBE_EMAIL'] = self.TAGCUBE_EMAIL
+
         self.assertIsNotNone(self.STAGING_ROOT_URL)
         self.assertIsNotNone(self.TAGCUBE_API_KEY)
         self.assertIsNotNone(self.TAGCUBE_EMAIL)
