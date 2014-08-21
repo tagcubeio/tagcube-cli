@@ -3,6 +3,8 @@ import os
 
 from setuptools import setup, find_packages
 from os.path import join, dirname
+from tagcube import __VERSION__
+
 
 if os.environ.get('CIRCLECI', None) is not None:
     # monkey-patch distutils upload
@@ -17,7 +19,7 @@ if os.environ.get('CIRCLECI', None) is not None:
 setup(
       name='tagcube-cli',
 
-      version='0.1.2',
+      version=__VERSION__,
       license = 'GNU General Public License v2 (GPLv2)',
       platforms='Linux',
       

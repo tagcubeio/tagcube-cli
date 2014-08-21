@@ -15,6 +15,7 @@ except ImportError:
     import httplib as http_client
 
 
+from tagcube import __VERSION__
 from tagcube.utils.exceptions import TagCubeAPIException, IncorrectAPICredentials
 from tagcube.utils.resource import Resource
 from tagcube.utils.result_handlers import (ONE_RESULT, LATEST_RESULT,
@@ -38,12 +39,13 @@ You can't scan the specified domain. This happens in the following cases:
 
 class TagCubeClient(object):
 
-    ROOT_URL = os.environ.get('ROOT_URL', None) or 'https://api.tagcube.io/'
+    DEFAULT_ROOT_URL = 'https://api.tagcube.io/'
 
     API_VERSION = '1.0'
 
     SELF_URL = '/users/~'
     DOMAINS = '/domains/'
+    SCANS = '/scans/'
     VERIFICATIONS = '/verifications/'
     SCAN_PROFILES = '/profiles/'
 
@@ -53,6 +55,8 @@ class TagCubeClient(object):
         self.email = email
         self.api_key = api_key
         self.session = None
+
+        self.root_url = os.environ.get('ROOT_URL', None) or self.DEFAULT_ROOT_URL
 
         self.set_verbose(verbose)
         self.configure_requests()
@@ -331,6 +335,15 @@ class TagCubeClient(object):
         url = self.build_full_url(self.DOMAINS)
         return self.create_resource(url, data)
 
+    def get_scan(self, scan_id):
+        """
+        :param scan_id: The scan ID as a string
+        :return: A resource containing the scan information
+        """
+        url = self.build_full_url('%s%s' % (self.SCANS, scan_id))
+        _, json_data = self.send_request(url)
+        return Resource(json_data)
+
     def create_resource(self, url, data):
         """
         Shortcut for creating a new resource
@@ -379,7 +392,7 @@ class TagCubeClient(object):
         self.session.auth = (self.email, self.api_key)
 
         headers = {'Content-Type': 'application/json',
-                   'User-Agent': 'TagCubeClient %s' % self.API_VERSION}
+                   'User-Agent': 'TagCubeClient %s' % __VERSION__}
         self.session.headers.update(headers)
 
     def handle_api_errors(self, status_code, json_data):
@@ -436,7 +449,12 @@ class TagCubeClient(object):
         if response.status_code == 401:
             raise IncorrectAPICredentials('Invalid TagCube API credentials')
 
-        json_data = response.json()
+        try:
+            json_data = response.json()
+        except ValueError:
+            msg = 'TagCube REST API did not return JSON, if this issue'\
+                  ' persists please contact support@tagcube.io'
+            raise TagCubeAPIException(msg)
 
         pretty_json = json.dumps(json_data, indent=4)
         msg = 'Received %s HTTP response from the wire:\n%s'
@@ -448,7 +466,7 @@ class TagCubeClient(object):
         return response.status_code, json_data
 
     def build_full_url(self, last_part):
-        return '%s%s%s' % (self.ROOT_URL, self.API_VERSION, last_part)
+        return '%s%s%s' % (self.root_url, self.API_VERSION, last_part)
 
     def build_api_path(self, resource_name, last_part=''):
         return '/%s/%s/%s' % (self.API_VERSION, resource_name, last_part)
