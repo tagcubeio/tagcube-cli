@@ -38,8 +38,7 @@ You can't scan the specified domain. This happens in the following cases:
 
 class TagCubeClient(object):
 
-    ROOT_DOMAIN = os.environ.get('ROOT_DOMAIN', None) or 'api.tagcube.io'
-    ROOT_URL = 'https://%s/' % ROOT_DOMAIN
+    ROOT_URL = os.environ.get('ROOT_URL', None) or 'https://api.tagcube.io/'
 
     API_VERSION = '1.0'
 
