@@ -175,16 +175,16 @@ class TagCubeClient(object):
         This method's last step is to send a POST request to /1.0/scans/ using
         a post-data similar to:
 
-            {"verifications_href": "/1.0/verifications/6",
-             "profiles_href": "/1.0/profiles/2",
+            {"verification_href": "/1.0/verifications/6",
+             "profile_href": "/1.0/profiles/2",
              "start_time": "now",
              "email_notifications_href": [],
              "path_list": ["/"]}'
 
         :return: The newly generated scan id
         """
-        data = {"verifications_href": verification_resource.href,
-                "profiles_href": scan_profile_resource.href,
+        data = {"verification_href": verification_resource.href,
+                "profile_href": scan_profile_resource.href,
                 "start_time": "now",
                 "email_notifications_href": [n.href for n in notification_resource_list],
                 "path_list": path_list}
