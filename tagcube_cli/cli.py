@@ -3,7 +3,7 @@ import logging
 
 from requests.exceptions import ConnectionError
 
-from tagcube import TagCubeClient
+from tagcube.client.api import TagCubeClient
 from tagcube.utils.exceptions import TagCubeAPIException
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                path_file_to_list, is_valid_email,
