@@ -421,14 +421,14 @@ class TagCubeClient(object):
         """
         error_list = []
 
-        if status_code == 400:
+        if 'error' in json_data and len(json_data) == 1 \
+        and isinstance(json_data, dict) and isinstance(json_data['error'], list):
+            error_list = json_data['error']
+
+        elif status_code == 400:
             for main_error_key in json_data:
                 for sub_error_key in json_data[main_error_key]:
                     error_list.extend(json_data[main_error_key][sub_error_key])
-
-        elif 'error' in json_data and len(json_data) == 1 \
-        and isinstance(json_data, dict) and isinstance(json_data['error'], list):
-            error_list = json_data['error']
 
         # Only raise an exception if we had any errors
         if error_list:
