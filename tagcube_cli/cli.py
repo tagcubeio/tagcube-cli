@@ -40,6 +40,18 @@ examples:\n
 
 '''
 
+NO_CREDENTIALS_ERROR = '''\
+No credentials provided. Please use one of these methods to configure them:
+
+    * --tagcube-email and --tagcube-api-key command line arguments
+
+    * TAGCUBE_EMAIL and TAGCUBE_API_KEY environment variables
+
+    * A ".tagcube" YAML file
+
+More information at:
+    https://www.tagcube.io/docs/cli/'''
+
 
 class TagCubeCLI(object):
     """
@@ -259,6 +271,4 @@ class TagCubeCLI(object):
                 cli_logger.debug('Using .tagcube file configured credentials')
                 return cfg_email, cfg_api_key
 
-        raise ValueError('No credentials provided at: command line argument,'
-                         ' configuration file or environment variables.')
-
+        raise ValueError(NO_CREDENTIALS_ERROR)
