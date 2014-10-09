@@ -4,6 +4,30 @@ import json
 
 from tagcube.client.api import TagCubeClient
 
+EMPTY_REST_API_RESPONSE = '''\
+{
+    "meta": {
+        "limit": 20,
+        "next": null,
+        "offset": 0,
+        "previous": null,
+        "total_count": 0
+    },
+    "objects": []
+}'''
+
+REST_API_RESPONSE_FMT = '''\
+{
+    "meta": {
+        "limit": 20,
+        "next": null,
+        "offset": 0,
+        "previous": null,
+        "total_count": 1
+    },
+    "objects": [%s]
+}'''
+
 
 class TestTagCubeClient(unittest.TestCase):
 
@@ -22,7 +46,7 @@ class TestTagCubeClient(unittest.TestCase):
     @httpretty.activate
     def test_credentials_content_type_basic_request(self):
         url = "%s%s/profiles/" % (self.ROOT_URL, self.API_VERSION)
-        httpretty.register_uri(httpretty.GET, url, body='[]',
+        httpretty.register_uri(httpretty.GET, url, body=EMPTY_REST_API_RESPONSE,
                                content_type="application/json")
 
         scan_profile_resource = self.client.get_scan_profile('fast_scan')
@@ -36,14 +60,15 @@ class TestTagCubeClient(unittest.TestCase):
         self.assertEqual(request.path, '/1.0/profiles/?name=fast_scan')
         self.assertEqual(request.headers['content-type'], 'application/json')
 
-        basic_auth = 'Basic Zm9vQGJhci5jb206ZjM2NGIwOTgtMGZiMy00MTc4LWE0NWItODgzZjM4OWFkMjk0'
+        basic_auth = 'Basic Zm9vQGJhci5jb206ZjM2NGIwOTgtMGZiMy00MTc4LWE0NWItO' \
+                     'DgzZjM4OWFkMjk0'
         self.assertEqual(request.headers['authorization'], basic_auth)
 
     @httpretty.activate
     def test_get_scan_profile_exists(self):
         url = "%s%s/profiles/" % (self.ROOT_URL, self.API_VERSION)
         expected_json = '{"href": "/1.0/profiles/1","name": "full_audit"}'
-        body = '[%s]' % expected_json
+        body = REST_API_RESPONSE_FMT % expected_json
         httpretty.register_uri(httpretty.GET, url, body=body,
                                content_type="application/json")
 
@@ -55,7 +80,7 @@ class TestTagCubeClient(unittest.TestCase):
     def test_get_scan_profile_not_exists(self):
         url = "%s%s/profiles/" % (self.ROOT_URL, self.API_VERSION)
 
-        httpretty.register_uri(httpretty.GET, url, body='[]',
+        httpretty.register_uri(httpretty.GET, url, body=EMPTY_REST_API_RESPONSE,
                                content_type="application/json")
 
         scan_profile_resource = self.client.get_scan_profile('fast_scan')
@@ -66,7 +91,7 @@ class TestTagCubeClient(unittest.TestCase):
     def test_quick_scan_invalid_profile(self):
         url = "%s%s/profiles/" % (self.ROOT_URL, self.API_VERSION)
 
-        httpretty.register_uri(httpretty.GET, url, body='[]',
+        httpretty.register_uri(httpretty.GET, url, body=EMPTY_REST_API_RESPONSE,
                                content_type="application/json")
 
         self.assertRaises(ValueError, self.client.quick_scan, self.ROOT_URL,
@@ -114,7 +139,7 @@ class TestTagCubeClient(unittest.TestCase):
             "last_name": "Riancho"
         }
         '''
-        body = '[%s]' % expected_json
+        body = REST_API_RESPONSE_FMT % expected_json
         httpretty.register_uri(httpretty.GET, url, body=body,
                                content_type="application/json")
 
@@ -126,7 +151,7 @@ class TestTagCubeClient(unittest.TestCase):
     def test_get_email_notification_not_exists(self):
         url = "%s%s/notifications/email/" % (self.ROOT_URL, self.API_VERSION)
 
-        httpretty.register_uri(httpretty.GET, url, body='[]',
+        httpretty.register_uri(httpretty.GET, url, body=EMPTY_REST_API_RESPONSE,
                                content_type="application/json")
 
         email_resource = self.client.get_email_notification('abc@def.com')
@@ -186,7 +211,7 @@ class TestTagCubeClient(unittest.TestCase):
             "verification_code": "46e06dde-43c6-4b31-88bd-6a0ffea42261"
         }
         '''
-        body = '[%s]' % expected_json
+        body = REST_API_RESPONSE_FMT % expected_json
         httpretty.register_uri(httpretty.GET, url, body=body,
                                content_type="application/json")
 
@@ -198,7 +223,7 @@ class TestTagCubeClient(unittest.TestCase):
     def test_get_domain_not_exists(self):
         url = "%s%s/domains/" % (self.ROOT_URL, self.API_VERSION)
 
-        httpretty.register_uri(httpretty.GET, url, body='[]',
+        httpretty.register_uri(httpretty.GET, url, body=EMPTY_REST_API_RESPONSE,
                                content_type="application/json")
 
         domain_resource = self.client.get_domain('www.fogfu.com')
