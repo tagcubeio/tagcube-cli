@@ -127,7 +127,7 @@ class TagCubeClient(object):
         if domain_resource is None:
             domain_resource = self.domain_add(domain)
 
-        verification_resource = self.get_latest_verification(domain_resource.id,
+        verification_resource = self.get_latest_verification(domain_resource.domain,
                                                              port, is_ssl)
 
         if verification_resource is None:
@@ -221,7 +221,7 @@ class TagCubeClient(object):
         url = self.build_full_url(self.VERIFICATIONS)
         return self.create_resource(url, data)
 
-    def get_latest_verification(self, domain_resource_id, port, is_ssl):
+    def get_latest_verification(self, domain_name, port, is_ssl):
         """
         :return: A verification resource (as Resource), or None. If there is
                  more than one verification resource available it will return
@@ -229,7 +229,7 @@ class TagCubeClient(object):
         """
         filter_dict = {'port': port,
                        'ssl': 'true' if is_ssl else 'false',
-                       'domain_href': domain_resource_id}
+                       'domain': domain_name}
         return self.multi_filter_resource('verifications', filter_dict,
                                           result_handler=LATEST_RESULT)
 
@@ -421,14 +421,14 @@ class TagCubeClient(object):
         """
         error_list = []
 
-        if status_code == 400:
+        if 'error' in json_data and len(json_data) == 1 \
+        and isinstance(json_data, dict) and isinstance(json_data['error'], list):
+            error_list = json_data['error']
+
+        elif status_code == 400:
             for main_error_key in json_data:
                 for sub_error_key in json_data[main_error_key]:
                     error_list.extend(json_data[main_error_key][sub_error_key])
-
-        elif 'error' in json_data and len(json_data) == 1 \
-        and isinstance(json_data, dict) and isinstance(json_data['error'], list):
-            error_list = json_data['error']
 
         # Only raise an exception if we had any errors
         if error_list:

@@ -6,7 +6,44 @@ LATEST_RESULT = 2
 ALL_RESULTS = 3
 
 
+def _get_objects_from_json(_json):
+    """
+    After enabling pagination in our API we receive results like this:
+        {
+            "meta": {
+                "previous": null,
+                "total_count": 1,
+                "offset": 0,
+                "limit": 20,
+                "next": null
+            },
+            "objects": [
+                {
+                    "href": "/1.0/profiles/2",
+                    "id": 2,
+                    "name": "fast_scan"
+                }
+            ]
+        }
+
+    In the past we received:
+        [
+            {
+                "href": "/1.0/profiles/2",
+                "id": 2,
+                "name": "fast_scan"
+            }
+        ]
+
+    So this simple/trivial function translates those two things. Created it
+    just to explain what's going on behind the scenes.
+    """
+    return _json['objects']
+
+
 def get_one_resource_after_filter(resource_name, filter_dict, _json):
+    _json = _get_objects_from_json(_json)
+
     if len(_json) == 0:
         return None
 
@@ -19,6 +56,8 @@ def get_one_resource_after_filter(resource_name, filter_dict, _json):
 
 
 def get_latest_resource_after_filter(resource_name, filter_dict, _json):
+    _json = _get_objects_from_json(_json)
+
     if len(_json) == 0:
         return None
 
@@ -26,6 +65,8 @@ def get_latest_resource_after_filter(resource_name, filter_dict, _json):
 
 
 def get_all_resources_after_filter(resource_name, filter_dict, _json):
+    _json = _get_objects_from_json(_json)
+
     return [Resource(rjson) for rjson in _json]
 
 
