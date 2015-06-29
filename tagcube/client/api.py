@@ -59,6 +59,12 @@ class TagCubeClient(object):
         self.root_url = os.environ.get('ROOT_URL', self.DEFAULT_ROOT_URL)
         self.verify = self.root_url == self.DEFAULT_ROOT_URL
 
+        if not self.verify:
+            # Remove warnings when running tests
+            #
+            # InsecureRequestWarning: Unverified HTTPS request is being made
+            requests.packages.urllib3.disable_warnings()
+
         self.set_verbose(verbose)
         self.configure_requests()
 
