@@ -4,7 +4,7 @@ test:
     - "pylint --msg-template='{msg_id}:{line:3d},{column}: {obj}: {msg}' -E `ls -d */`"
 
     # https://github.com/gabrielfalcao/HTTPretty/issues/242
-    - pip install --upgrade ndg-httpsclient==0.4.0 PyOpenSSL>=0.15.1
+    - "pip install --upgrade ndg-httpsclient==0.3.0"
 
     - nosetests -v tagcube
     - nosetests -v tagcube_cli
