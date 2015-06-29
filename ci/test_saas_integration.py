@@ -59,7 +59,9 @@ class TestTagCubeSaaSIntegration(unittest.TestCase):
         print(self.TAGCUBE_AUTH_CMD)
 
         try:
-            print(subprocess.check_output(self.TAGCUBE_AUTH_CMD, shell=True))
+            print(subprocess.check_output(self.TAGCUBE_AUTH_CMD,
+                                          stderr=subprocess.STDOUT,
+                                          shell=True))
         except subprocess.CalledProcessError, cpe:
             msg = '"%s" failed. The output was:\n%s'
             self.assertTrue(False, msg % (self.TAGCUBE_AUTH_CMD, cpe.output))

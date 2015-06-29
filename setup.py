@@ -14,6 +14,7 @@ if os.environ.get('CIRCLECI', None) is not None:
     try:
         from distutils.command import upload as old_upload_module
         from ci.upload import upload as fixed_upload
+
         old_upload_module.upload = fixed_upload
     except ImportError:
 
@@ -21,33 +22,34 @@ if os.environ.get('CIRCLECI', None) is not None:
         # repository where the ci module is present
         pass
 
-
 setup(
-      name='tagcube-cli',
+    name='tagcube-cli',
 
-      version=__VERSION__,
-      license = 'GNU General Public License v2 (GPLv2)',
-      platforms='Linux',
-      
-      description=('CLI to launch web application security scans using'
-                   'TagCube\'s REST API '),
-      long_description=file(join(dirname(__file__), 'README.rst')).read(),
-      
-      author='TagCube',
-      author_email='support@tagcube.io',
-      url='https://github.com/tagcubeio/tagcube-cli/',
-      
-      packages=find_packages(exclude=('ci',)),
-      include_package_data=True,
-      install_requires=['requests>=2.3.0', 'PyYAML>=3.11'],
+    version=__VERSION__,
+    license='GNU General Public License v2 (GPLv2)',
+    platforms='Linux',
 
-      entry_points={
-          'console_scripts':
-              ['tagcube-cli = tagcube_cli.main:main']
-      },
+    description=('CLI to launch web application security scans using'
+                 'TagCube\'s REST API '),
+    long_description=file(join(dirname(__file__), 'README.rst')).read(),
 
-      # https://pypi.python.org/pypi?%3Aaction=list_classifiers
-      classifiers = [
+    author='TagCube',
+    author_email='support@tagcube.io',
+    url='https://github.com/tagcubeio/tagcube-cli/',
+
+    packages=find_packages(exclude=('ci',)),
+    include_package_data=True,
+    install_requires=['requests>=2.3.0',
+                      'requests[security]',
+                      'PyYAML>=3.11'],
+
+    entry_points={
+        'console_scripts':
+            ['tagcube-cli = tagcube_cli.main:main']
+    },
+
+    # https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
@@ -56,9 +58,9 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Monitoring'
-        ],
-      
-       # In order to run this command: python setup.py test
-       test_suite="nose.collector",
-       tests_require="nose",
-     )
+    ],
+
+    # In order to run this command: python setup.py test
+    test_suite="nose.collector",
+    tests_require="nose",
+)

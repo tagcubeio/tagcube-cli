@@ -56,7 +56,8 @@ class TagCubeClient(object):
         self.api_key = api_key
         self.session = None
 
-        self.root_url = os.environ.get('ROOT_URL', None) or self.DEFAULT_ROOT_URL
+        self.root_url = os.environ.get('ROOT_URL', self.DEFAULT_ROOT_URL)
+        self.verify = self.root_url == self.DEFAULT_ROOT_URL
 
         self.set_verbose(verbose)
         self.configure_requests()
@@ -437,11 +438,11 @@ class TagCubeClient(object):
 
     def send_request(self, url, json_data=None, method='GET'):
         if method == 'GET':
-            response = self.session.get(url)
+            response = self.session.get(url, verify=self.verify)
 
         elif method == 'POST':
             data = json.dumps(json_data)
-            response = self.session.post(url, data=data)
+            response = self.session.post(url, data=data, verify=self.verify)
 
         else:
             raise ValueError('Invalid HTTP method: "%s"' % method)
@@ -452,8 +453,8 @@ class TagCubeClient(object):
         try:
             json_data = response.json()
         except ValueError:
-            msg = 'TagCube REST API did not return JSON, if this issue'\
-                  ' persists please contact support@tagcube.io'
+            msg = ('TagCube REST API did not return JSON, if this issue'
+                   ' persists please contact support@tagcube.io')
             raise TagCubeAPIException(msg)
 
         pretty_json = json.dumps(json_data, indent=4)
