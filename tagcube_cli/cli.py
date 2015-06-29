@@ -81,8 +81,9 @@ class TagCubeCLI(object):
             handler = self.choose_handler()
             handler()
 
-        except ConnectionError:
-            cli_logger.error('Failed to connect to TagCube\'s REST API.')
+        except ConnectionError, ce:
+            msg = 'Failed to connect to TagCube REST API: "%s"'
+            cli_logger.error(msg % ce)
             return 3
 
         except TagCubeAPIException, tae:
