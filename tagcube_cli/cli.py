@@ -6,39 +6,14 @@ from requests.exceptions import ConnectionError
 from tagcube.client.api import TagCubeClient
 from tagcube.utils.exceptions import TagCubeAPIException
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
-                               path_file_to_list, is_valid_email,
-                               CustomArgParser, CustomHelpFormatter)
+                               argparse_url_type, argparse_path_list_type,
+                               argparse_email_type)
 
 
 cli_logger = logging.getLogger(__name__)
 
 DESCRIPTION = 'TagCube client - %s' % TagCubeClient.DEFAULT_ROOT_URL
-EPILOG = '''\
-examples:\n
-
- * Run a scan to http://target.com/, notify the REST API username email address
-   when it finishes
-
-        tagcube-cli http://target.com
-
- * Run a scan with a custom profile, enabling verbose mode and notifying a
-   different email address when the scan finishes
-
-        tagcube-cli http://target.com --email-notify=other@example.com \\
-                    --scan-profile=fast_scan -v
-
- * Provide TagCube's REST API credentials as command line arguments. Read the
-   documentation to find how to provide REST API credentials using environment
-   variables or the .tagcube file
-
-        tagcube-cli http://target.com  --tagcube-email=user@example.com \\
-                    --tagcube-api-key=...
-
- * Verify that the configured credentials are working
-
-        tagcube-cli --auth-test
-
-'''
+EPILOG = 'More information and usage examples at https://tagcube.io/docs/cli/'
 
 NO_CREDENTIALS_ERROR = '''\
 No credentials provided. Please use one of these methods to configure them:
@@ -77,9 +52,12 @@ class TagCubeCLI(object):
 
         :return: The exit code for our process
         """
+        subcommands = {'auth': self.do_auth_test,
+                       'scan': self.do_scan_start,
+                       'batch': self.do_batch_scan}
+
         try:
-            handler = self.choose_handler()
-            handler()
+            subcommands.get(self.cmd_args.subcommand)()
 
         except ConnectionError, ce:
             msg = 'Failed to connect to TagCube REST API: "%s"'
@@ -92,17 +70,7 @@ class TagCubeCLI(object):
 
         return 0
 
-    def choose_handler(self):
-        """
-        :return: The method that should be run based on the contents of
-                 self.cmd_args
-        """
-        if self.cmd_args.auth_test:
-            return self.handle_auth_test
-        else:
-            return self.handle_scan_start
-
-    def handle_auth_test(self):
+    def do_auth_test(self):
         """
         Handle the case where the user specifies --auth-test
         """
@@ -111,7 +79,7 @@ class TagCubeCLI(object):
 
         cli_logger.info('TagCube credentials are valid')
 
-    def handle_scan_start(self):
+    def do_scan_start(self):
         if not self.client.test_auth_credentials():
             raise ValueError('Invalid TagCube REST API credentials.')
 
@@ -127,110 +95,136 @@ class TagCubeCLI(object):
         cli_logger.info('Launched scan with id #%s' % scan_resource.id)
         # pylint: enable=E1101
 
+    def do_batch_scan(self):
+        raise NotImplementedError
+
     @staticmethod
     def parse_args(args=None):
         """
-        :return: The result of applying arparse to sys.argv
+        :return: The result of applying argparse to sys.argv
         """
-        parser = CustomArgParser(prog='tagcube-cli',
-                                 description=DESCRIPTION,
-                                 epilog=EPILOG,
-                                 formatter_class=CustomHelpFormatter)
+        #
+        #   The main parser
+        #
+        parser = argparse.ArgumentParser(prog='tagcube',
+                                         description=DESCRIPTION,
+                                         epilog=EPILOG)
 
-        parser.add_argument('url',
-                            default=None, nargs='?',
-                            help='URL for web application security scan.'
-                                 '(e.g. https://www.target.com/)')
+        #
+        #   Parser for the common arguments
+        #
+        common_parser = argparse.ArgumentParser(add_help=False)
 
-        parser.add_argument('--email-notify',
-                            required=False,
-                            dest='email_notify',
-                            help='Email address to notify when application'
-                                 ' scan finishes')
+        common_parser.add_argument('--email',
+                                   required=False,
+                                   dest='email',
+                                   type=argparse_email_type,
+                                   help='The email address (user) to use when'
+                                        ' sending requests to TagCube\'s REST'
+                                        ' API')
 
-        parser.add_argument('--auth-test',
-                            required=False,
-                            dest='auth_test',
-                            action='store_true',
-                            help='Test configured authentication credentials'
-                                 ' and exit. No target URL nor email'
-                                 ' notifications need to be configured to'
-                                 ' verify the credentials.')
+        common_parser.add_argument('--key',
+                                   required=False,
+                                   dest='key',
+                                   help='The API key to authenticate with'
+                                        ' TagCube\'s REST API')
 
-        parser.add_argument('--tagcube-email',
-                            required=False,
-                            dest='tagcube_email',
-                            help='The email address to use when sending'
-                                 ' requests to TagCube\'s REST API')
+        common_parser.add_argument('-v',
+                                   required=False,
+                                   dest='verbose',
+                                   action='store_true',
+                                   help='Enables verbose output')
 
-        parser.add_argument('--tagcube-api-key',
-                            required=False,
-                            dest='tagcube_api_key',
-                            help='The API key to use when sending requests'
-                                 ' to TagCube\'s REST API')
+        subparsers = parser.add_subparsers(help='TagCube sub-commands',
+                                           dest='subcommand')
 
-        parser.add_argument('--scan-profile',
-                            required=False,
-                            dest='scan_profile',
-                            default='full_audit',
-                            help='The web application scan profile to use.'
-                                 ' A complete list of scan profiles can be'
-                                 ' retrieved from the API or Web UI.')
+        #
+        #   Scan
+        #
+        scan_parser = subparsers.add_parser('scan',
+                                            help='Web application security'
+                                                 ' scan using TagCube',
+                                            parents=[common_parser])
 
-        parser.add_argument('--path-file',
-                            required=False,
-                            dest='path_file',
-                            type=argparse.FileType('r'),
-                            help='A file specifying the URL paths (without the'
-                                 ' domain name) which TagCube will use to'
-                                 ' bootstrap the web crawler. The "/" path'
-                                 ' is used when no --path-file parameter is'
-                                 ' specified.')
+        scan_parser.add_argument('--root-url',
+                                 required=True,
+                                 dest='root_url',
+                                 type=argparse_url_type,
+                                 help='Root URL for web application security'
+                                      ' scan (e.g. https://www.target.com/)')
 
-        parser.add_argument('-v',
-                            required=False,
-                            dest='verbose',
-                            action='store_true',
-                            help='Enables verbose output')
+        scan_parser.add_argument('--scan-profile',
+                                 required=False,
+                                 dest='scan_profile',
+                                 default='full_audit',
+                                 help='The web application scan profile to use.'
+                                      ' A complete list of scan profiles can be'
+                                      ' retrieved from the API or Web UI.')
+
+        scan_parser.add_argument('--path-file',
+                                 required=False,
+                                 dest='path_file',
+                                 default=['/'],
+                                 type=argparse_path_list_type,
+                                 help='A file specifying the URL paths (without'
+                                      ' the domain name) which TagCube will use'
+                                      ' to bootstrap the web crawler. The "/"'
+                                      ' path is used when no'
+                                      ' --path-file parameter is specified.')
+
+        scan_parser.add_argument('--email-notify',
+                                 required=False,
+                                 dest='email_notify',
+                                 type=argparse_email_type,
+                                 help='Email address to notify when application'
+                                      ' scan finishes')
+
+        #
+        #   Auth test subcommand
+        #
+        _help = ('Test configured authentication credentials and exit. No'
+                 ' target URL nor email notifications need to be configured'
+                 ' to verify the credentials.')
+        auth_parser = subparsers.add_parser('auth',
+                                            help=_help,
+                                            parents=[common_parser])
+
+        #
+        #   Batch scan subcommand
+        #
+        _help = ('Scan multiple domains and URLs in one command, one scan will'
+                 ' be started for each unique protocol-domain-port tuple, the'
+                 ' URLs paths are processed and sent in the scan configuration')
+        batch_parser = subparsers.add_parser('batch',
+                                             help=_help,
+                                             parents=[common_parser])
+
+        batch_parser.add_argument('--urls-file',
+                                  required=True,
+                                  dest='urls_file',
+                                  type=argparse.FileType('r'),
+                                  help='Text file containing one URL per line')
+
 
         cmd_args = parser.parse_args(args)
 
-        if len([x for x in (cmd_args.tagcube_api_key, cmd_args.tagcube_email) if x is not None]) == 1:
-            parser.error('--tagcube-api-key and --tagcube-email must be given'
-                         ' together')
+        handlers = {'scan': TagCubeCLI.handle_scan_args,
+                    'auth': TagCubeCLI.handle_auth_args,
+                    'batch': TagCubeCLI.handle_batch_args}
 
-        if cmd_args.auth_test:
-            # When auth_test is specified, we'll just perform that action and
-            # exit, so all the other parameters are ignored. We want to enforce
-            # that action here
-            if cmd_args.url is not None or\
-            cmd_args.email_notify is not None:
-                parser.error('Target URL and --email-notify should not be'
-                             ' set when --auth-test is.')
-        else:
-            if cmd_args.url is None:
-                parser.error('Positional argument url is required')
-            elif not (cmd_args.url.startswith('http://') or \
-                      cmd_args.url.startswith('https://')):
-                parser.error('Invalid target URL: "%s"' % cmd_args.url)
+        handler = handlers.get(cmd_args.subcommand)
+        return handler(parser, cmd_args)
 
-        if cmd_args.tagcube_email is not None:
-            if not is_valid_email(cmd_args.tagcube_email):
-                parser.error('Invalid tagcube user email: "%s"' % cmd_args.tagcube_email)
+    @staticmethod
+    def handle_global_args(parser, cmd_args):
+        #
+        #   Global/Parent extra argument parsing steps
+        #
+        together = (cmd_args.key, cmd_args.email)
+        if len([x for x in together if x is not None]) == 1:
+            parser.error('--key and --email must be used together')
 
-        if cmd_args.email_notify is not None:
-            if not is_valid_email(cmd_args.email_notify):
-                parser.error('Invalid notification email: "%s"' % cmd_args.email_notify)
-
-        if cmd_args.path_file is not None:
-            try:
-                cmd_args.path_list = path_file_to_list(cmd_args.path_file)
-            except ValueError, ve:
-                parser.error('%s' % ve)
-        else:
-            # The default path list is just a /
-            cmd_args.path_list = ['/']
-
+        #   Enable debugging if required by the user
         level = logging.DEBUG if cmd_args.verbose else logging.INFO
         cli_logger.setLevel(level=level)
 
@@ -241,6 +235,21 @@ class TagCubeCLI(object):
         ch.setFormatter(formatter)
         cli_logger.addHandler(ch)
 
+        return cmd_args
+
+    @staticmethod
+    def handle_auth_args(parser, cmd_args):
+        TagCubeCLI.handle_global_args(parser, cmd_args)
+        return cmd_args
+
+    @staticmethod
+    def handle_batch_args(parser, cmd_args):
+        TagCubeCLI.handle_global_args(parser, cmd_args)
+        return cmd_args
+
+    @staticmethod
+    def handle_scan_args(parser, cmd_args):
+        TagCubeCLI.handle_global_args(parser, cmd_args)
         return cmd_args
 
     @staticmethod
@@ -255,7 +264,7 @@ class TagCubeCLI(object):
                  It will return the first match, in the order specified above.
         """
         # Check the cmd args, return if we have something here
-        cmd_credentials = cmd_args.tagcube_email, cmd_args.tagcube_api_key
+        cmd_credentials = cmd_args.email, cmd_args.key
         if cmd_credentials != (None, None):
             cli_logger.debug('Using command line configured credentials')
             return cmd_credentials

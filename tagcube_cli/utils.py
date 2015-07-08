@@ -57,39 +57,6 @@ def get_config_from_env():
             os.environ.get('TAGCUBE_API_KEY', None))
 
 
-class CustomArgParser(argparse.ArgumentParser):
-    def format_help(self):
-        """
-        Overriding to call add_raw_text
-        """
-        formatter = self._get_formatter()
-
-        # usage
-        formatter.add_usage(self.usage, self._actions,
-                            self._mutually_exclusive_groups)
-
-        # description
-        formatter.add_text(self.description)
-
-        # positionals, optionals and user-defined groups
-        for action_group in self._action_groups:
-            formatter.start_section(action_group.title)
-            formatter.add_text(action_group.description)
-            formatter.add_arguments(action_group._group_actions)
-            formatter.end_section()
-
-        # epilog
-        formatter.add_raw_text(self.epilog)
-
-        # determine help from format above
-        return formatter.format_help()
-
-
-class CustomHelpFormatter(argparse.HelpFormatter):
-    def add_raw_text(self, text):
-        self._add_item(lambda x: x, [text])
-
-
 def is_valid_email(email):
     """
     Very trivial check to verify that the user provided parameter is an email
@@ -113,6 +80,39 @@ def is_valid_path(path):
             raise ValueError(msg % c)
 
     return True
+
+
+def argparse_email_type(email):
+    if not is_valid_email(email):
+        msg = '%s is not a valid email address.'
+        raise argparse.ArgumentTypeError(msg % email)
+
+    return email
+
+
+def argparse_url_type(url):
+    if url.startswith('http://'):
+        return url
+
+    if url.startswith('https://'):
+        return url
+
+    msg = '%s is not a valid URL.'
+    raise argparse.ArgumentTypeError(msg % url)
+
+
+def argparse_path_list_type(path_file):
+    if not os.path.exists(path_file):
+        msg = 'The provided --path-file does not exist'
+        raise argparse.ArgumentTypeError(msg)
+
+    try:
+        file(path_file)
+    except:
+        msg = 'The provided --path-file can not be read'
+        raise argparse.ArgumentTypeError(msg)
+
+    return path_file_to_list(path_file)
 
 
 def path_file_to_list(path_file):
