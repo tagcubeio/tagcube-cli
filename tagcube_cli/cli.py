@@ -110,6 +110,29 @@ class TagCubeCLI(object):
                                    action='store_true',
                                    help='Enables verbose output')
 
+        #
+        #   Parser for common scan arguments
+        #
+        scan_common = argparse.ArgumentParser(add_help=False)
+
+        scan_common.add_argument('--scan-profile',
+                                 required=False,
+                                 dest='scan_profile',
+                                 default='full_audit',
+                                 help='The web application scan profile to use.'
+                                      ' A complete list of scan profiles can be'
+                                      ' retrieved from the API or Web UI.')
+
+        scan_common.add_argument('--email-notify',
+                                 required=False,
+                                 dest='email_notify',
+                                 type=argparse_email_type,
+                                 help='Email address to notify when application'
+                                      ' scan finishes')
+
+        #
+        #   Handle subcommands
+        #
         subparsers = parser.add_subparsers(help='TagCube sub-commands',
                                            dest='subcommand')
 
@@ -119,7 +142,8 @@ class TagCubeCLI(object):
         scan_parser = subparsers.add_parser('scan',
                                             help='Web application security'
                                                  ' scan using TagCube',
-                                            parents=[common_parser])
+                                            parents=[common_parser,
+                                                     scan_common])
 
         scan_parser.add_argument('--root-url',
                                  required=True,
@@ -127,14 +151,6 @@ class TagCubeCLI(object):
                                  type=argparse_url_type,
                                  help='Root URL for web application security'
                                       ' scan (e.g. https://www.target.com/)')
-
-        scan_parser.add_argument('--scan-profile',
-                                 required=False,
-                                 dest='scan_profile',
-                                 default='full_audit',
-                                 help='The web application scan profile to use.'
-                                      ' A complete list of scan profiles can be'
-                                      ' retrieved from the API or Web UI.')
 
         scan_parser.add_argument('--path-file',
                                  required=False,
@@ -146,13 +162,6 @@ class TagCubeCLI(object):
                                       ' to bootstrap the web crawler. The "/"'
                                       ' path is used when no'
                                       ' --path-file parameter is specified.')
-
-        scan_parser.add_argument('--email-notify',
-                                 required=False,
-                                 dest='email_notify',
-                                 type=argparse_email_type,
-                                 help='Email address to notify when application'
-                                      ' scan finishes')
 
         #
         #   Auth test subcommand
@@ -172,7 +181,8 @@ class TagCubeCLI(object):
                  ' URLs paths are processed and sent in the scan configuration')
         batch_parser = subparsers.add_parser('batch',
                                              help=_help,
-                                             parents=[common_parser])
+                                             parents=[common_parser,
+                                                      scan_common])
 
         batch_parser.add_argument('--urls-file',
                                   required=True,
