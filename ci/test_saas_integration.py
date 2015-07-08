@@ -18,8 +18,8 @@ class TestTagCubeSaaSIntegration(unittest.TestCase):
     TAGCUBE_API_KEY = os.environ.get('TAGCUBE_API_KEY_%s' % BRANCH)
     TAGCUBE_EMAIL = os.environ.get('TAGCUBE_EMAIL_%s' % BRANCH)
 
-    TAGCUBE_SCAN_CMD_FMT = 'tagcube-cli --scan-profile=fast_scan -v %s'
-    TAGCUBE_AUTH_CMD = 'tagcube-cli -v --auth-test'
+    TAGCUBE_SCAN_CMD_FMT = 'tagcube scan --scan-profile=fast_scan -v --root-url %s'
+    TAGCUBE_AUTH_CMD = 'tagcube auth -v'
 
     def setUp(self):
         self.assertIsNotNone(self.STAGING_ROOT_URL)
