@@ -19,7 +19,7 @@ URL as parameter:
 
     $ export TAGCUBE_EMAIL=user@example.com
     $ export TAGCUBE_API_KEY=`cat key.txt`
-    $ tagcube-cli http://domain.com
+    $ tagcube --root-url http://domain.com
     Web application scan for "http://domain.com/" successfully started at TagCube cloud.
 
 This will create the new domain resource in TagCube's REST API and start a new
@@ -42,7 +42,7 @@ when it finishes
 
 ::
 
-    $ tagcube-cli http://target.com
+    $ tagcube --root-urls http://target.com
 
 
 Run a scan with a custom profile, enabling verbose mode and notifying a
@@ -50,8 +50,8 @@ different email address when the scan finishes
 
 ::
 
-    $ tagcube-cli http://target.com --email-notify=other@example.com \
-                  --scan-profile=fast_scan -v
+    $ tagcube --root-urls http://target.com --email-notify=other@example.com \
+              --scan-profile=fast_scan -v
 
 Provide TagCube's REST API credentials as command line arguments. Read the
 documentation to find how to provide REST API credentials using environment
@@ -59,14 +59,14 @@ variables or the .tagcube file
 
 ::
 
-    $ tagcube-cli http://target.com  --tagcube-email=user@example.com \
-                  --tagcube-api-key=...
+    $ tagcube --root-urls http://target.com  --tagcube-email=user@example.com \
+              --tagcube-api-key=...
 
 Verify that the configured credentials are working
 
 ::
 
-    $ tagcube-cli --auth-test
+    $ tagcube auth
 
 
 Configuration file
@@ -87,7 +87,7 @@ Once the file is in place, the tool can be run:
 
 ::
 
-    $ tagcube-cli --auth-test
+    $ tagcube auth
     Successfully authenticated against TagCube's API.
     $
 
