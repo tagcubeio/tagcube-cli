@@ -5,12 +5,14 @@ from requests.exceptions import ConnectionError
 
 from tagcube.client.api import TagCubeClient
 from tagcube.utils.exceptions import TagCubeAPIException
+from tagcube_cli.logger import cli_logger
+from tagcube_cli.subcommands.auth import do_auth_test
+from tagcube_cli.subcommands.scan import do_scan_start
+from tagcube_cli.subcommands.batch import do_batch_scan
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                argparse_url_type, argparse_path_list_type,
                                argparse_email_type)
 
-
-cli_logger = logging.getLogger(__name__)
 
 DESCRIPTION = 'TagCube client - %s' % TagCubeClient.DEFAULT_ROOT_URL
 EPILOG = 'More information and usage examples at https://tagcube.io/docs/cli/'
@@ -52,12 +54,13 @@ class TagCubeCLI(object):
 
         :return: The exit code for our process
         """
-        subcommands = {'auth': self.do_auth_test,
-                       'scan': self.do_scan_start,
-                       'batch': self.do_batch_scan}
+        subcommands = {'auth': do_auth_test,
+                       'scan': do_scan_start,
+                       'batch': do_batch_scan}
 
         try:
-            subcommands.get(self.cmd_args.subcommand)()
+            subcommands.get(self.cmd_args.subcommand)(self.client,
+                                                      self.cmd_args)
 
         except ConnectionError, ce:
             msg = 'Failed to connect to TagCube REST API: "%s"'
@@ -69,34 +72,6 @@ class TagCubeCLI(object):
             return 4
 
         return 0
-
-    def do_auth_test(self):
-        """
-        Handle the case where the user specifies --auth-test
-        """
-        if not self.client.test_auth_credentials():
-            raise ValueError('Invalid TagCube REST API credentials.')
-
-        cli_logger.info('TagCube credentials are valid')
-
-    def do_scan_start(self):
-        if not self.client.test_auth_credentials():
-            raise ValueError('Invalid TagCube REST API credentials.')
-
-        cli_logger.debug('Authentication credentials are valid')
-        cli_logger.debug('Starting web application scan')
-
-        scan_resource = self.client.quick_scan(self.cmd_args.url,
-                                               email_notify=self.cmd_args.email_notify,
-                                               scan_profile=self.cmd_args.scan_profile,
-                                               path_list=self.cmd_args.path_list)
-
-        # pylint: disable=E1101
-        cli_logger.info('Launched scan with id #%s' % scan_resource.id)
-        # pylint: enable=E1101
-
-    def do_batch_scan(self):
-        raise NotImplementedError
 
     @staticmethod
     def parse_args(args=None):
@@ -204,7 +179,6 @@ class TagCubeCLI(object):
                                   dest='urls_file',
                                   type=argparse.FileType('r'),
                                   help='Text file containing one URL per line')
-
 
         cmd_args = parser.parse_args(args)
 
