@@ -3,14 +3,14 @@ import tempfile
 import shutil
 import os
 
-from mock import patch
+from mock import patch, call
 
 from tagcube_cli.cli import TagCubeCLI
 
 
 class TestTagCubeCLI(unittest.TestCase):
 
-    SIMPLE_ARGS = ['http://target.com']
+    SIMPLE_ARGS = ['scan', '--root-url', 'http://target.com']
     TAGCUBE_FILE = '.tagcube'
     TAGCUBE_FILE_BACKUP = '.tagcube-unittest-backup'
 
@@ -40,7 +40,7 @@ class TestTagCubeCLI(unittest.TestCase):
         self.assertRaises(ValueError, TagCubeCLI.from_cmd_args, parsed_args)
 
     def test_user_pass_command_line_with_creds(self):
-        args = self.SIMPLE_ARGS + ['--tagcube-email=x@y.com', '--tagcube-api-key=w']
+        args = self.SIMPLE_ARGS + ['--email=x@y.com', '--key=w']
 
         parsed_args = TagCubeCLI.parse_args(args)
         tagcube_cli = TagCubeCLI.from_cmd_args(parsed_args)
@@ -56,7 +56,7 @@ class TestTagCubeCLI(unittest.TestCase):
 
         args = self.SIMPLE_ARGS + ['--path-file=%s' % fh.name]
         parsed_args = TagCubeCLI.parse_args(args)
-        self.assertEqual(parsed_args.path_list, ['/foo', '/bar'])
+        self.assertEqual(parsed_args.path_file, ['/foo', '/bar'])
 
     def test_parse_path_file_incorrect_format(self):
         path_file = 'bar'
@@ -69,5 +69,7 @@ class TestTagCubeCLI(unittest.TestCase):
 
         with patch('argparse._sys.exit') as exit_mock,\
         patch('argparse._sys.stderr') as stderr_mock:
-            TagCubeCLI.parse_args(args)
-            self.assertEqual(exit_mock.call_count, 1)
+            self.assertRaises(TypeError, TagCubeCLI.parse_args, args)
+
+            self.assertEqual(exit_mock.call_args_list, [call(2)])
+            self.assertEqual(stderr_mock.call_args_list, [])

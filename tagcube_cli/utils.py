@@ -112,7 +112,10 @@ def argparse_path_list_type(path_file):
         msg = 'The provided --path-file can not be read'
         raise argparse.ArgumentTypeError(msg)
 
-    return path_file_to_list(path_file)
+    try:
+        return path_file_to_list(path_file)
+    except ValueError, ve:
+        raise argparse.ArgumentTypeError(str(ve))
 
 
 def path_file_to_list(path_file):
@@ -121,8 +124,9 @@ def path_file_to_list(path_file):
              line format. Validate each path using is_valid_path
     """
     paths = []
+    path_file_fd = file(path_file)
 
-    for line_no, line in enumerate(path_file.readlines(), start=1):
+    for line_no, line in enumerate(path_file_fd.readlines(), start=1):
         line = line.strip()
 
         if not line:
@@ -137,6 +141,7 @@ def path_file_to_list(path_file):
             is_valid_path(line)
             paths.append(line)
         except ValueError, ve:
-            raise ValueError('%s Error found in line %s.' % (ve, line_no))
+            args = (ve, path_file, line_no)
+            raise ValueError('%s error found in %s:%s.' % args)
 
     return paths
