@@ -30,7 +30,7 @@ def create_scans(urls_file):
     cli_logger.debug('Starting to process batch input file')
     created_scans = []
 
-    for line in file(urls_file):
+    for line in urls_file:
         line = line.strip()
 
         if line.startswith('#'):
@@ -47,8 +47,9 @@ def create_scans(urls_file):
 
         for scan in created_scans:
             if scan.matches(protocol, domain, port):
-                cli_logger.debug('Added %s to %s' % (path, scan.get_root_url()))
                 scan.add_path(path)
+                args = (path, scan.get_root_url())
+                cli_logger.debug('Added %s to %s' % args)
                 break
         else:
             scan = BatchScan(protocol, domain, port, path)
@@ -75,7 +76,7 @@ def parse_url(url):
         # http://foo.com
         path = '/'
     elif len(split_url) == 4:
-        path = split_url[3]
+        path = '/' + split_url[3]
     else:
         raise ValueError('Invalid URL: %s' % url)
 
