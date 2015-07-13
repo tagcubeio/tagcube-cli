@@ -45,8 +45,7 @@ setup(
 
     entry_points={
         'console_scripts':
-            ['tagcube-cli = tagcube_cli.main:main',
-             'tagcube = tagcube_cli.main:main']
+            ['tagcube = tagcube_cli.main:main']
     },
 
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers

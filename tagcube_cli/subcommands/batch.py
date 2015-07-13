@@ -15,7 +15,8 @@ def do_batch_scan(client, cmd_args):
                                           path_list=scan.get_paths())
 
         # pylint: disable=E1101
-        cli_logger.info('Launched scan with id #%s' % scan_resource.id)
+        args = (scan_resource.id, scan.get_root_url())
+        cli_logger.info('Launched scan #%s to %s' % args)
         # pylint: enable=E1101
 
 
@@ -130,4 +131,4 @@ class BatchScan(object):
         return self.paths.add(path)
 
     def get_paths(self):
-        return self.paths
+        return list(self.paths)
