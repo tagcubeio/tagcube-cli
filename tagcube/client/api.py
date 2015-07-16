@@ -79,6 +79,14 @@ class TagCubeClient(object):
         else:
             return code == 200
 
+    def get_current_user(self):
+        try:
+            code, data = self.send_request(self.build_full_url(self.SELF_URL))
+        except IncorrectAPICredentials:
+            return None
+        else:
+            return data
+
     def quick_scan(self, target_url, email_notify=None,
                    scan_profile='full_audit', path_list=('/',)):
         """
