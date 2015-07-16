@@ -39,8 +39,7 @@ setup(
 
     packages=find_packages(exclude=('ci',)),
     include_package_data=True,
-    install_requires=['requests>=2.3.0',
-                      'requests[security]',
+    install_requires=['requests[security]>=2.3.0',
                       'PyYAML>=3.11'],
 
     entry_points={
