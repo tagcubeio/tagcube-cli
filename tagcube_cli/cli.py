@@ -17,14 +17,14 @@ from tagcube_cli.utils import (parse_config_file, get_config_from_env,
 DESCRIPTION = 'TagCube client - %s' % TagCubeClient.DEFAULT_ROOT_URL
 EPILOG = 'More information and usage examples at https://tagcube.io/docs/cli/'
 
-NO_CREDENTIALS_ERROR = '''\
+NO_CREDENTIALS_ERROR = '''
 No credentials provided. Please use one of these methods to configure them:
 
     * --tagcube-email and --tagcube-api-key command line arguments
 
     * TAGCUBE_EMAIL and TAGCUBE_API_KEY environment variables
 
-    * A ".tagcube" YAML file
+    * A '.tagcube' YAML file
 
 More information at:
     https://www.tagcube.io/docs/cli/'''

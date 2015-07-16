@@ -2,6 +2,33 @@ import os
 import yaml
 import argparse
 
+from tagcube_cli.logger import cli_logger
+
+INVALID_FILE = '''\
+Invalid .tagcube configuration file found, the expected format is:
+
+credentials:
+    email: ...
+    api_key: ...
+
+Replace the dots with your username and REST API key and try again.
+
+Remember that YAML does not support tabs, spaces must be used to indent
+"email" and "api_key".'''
+
+SYNTAX_ERROR_FILE = '''\
+Invalid .tagcube configuration file format, the parser returned "%s" at line %s.
+The expected .tagcube file format is:
+
+credentials:
+    email: ...
+    api_key: ...
+
+Replace the dots with your username and REST API key and try again.
+
+Remember that YAML does not support tabs, spaces must be used to indent
+"email" and "api_key".'''
+
 
 def parse_config_file():
     """
@@ -13,10 +40,31 @@ def parse_config_file():
                 - api_token
     """
     for filename in ('.tagcube', os.path.expanduser('~/.tagcube')):
-        if os.path.exists(filename):
-            email, api_key = _parse_config_file_impl(filename)
-            if email is not None and api_key is not None:
-                return email, api_key
+
+        filename = os.path.abspath(filename)
+
+        if not os.path.exists(filename):
+            msg = 'TagCube configuration file "%s" does not exist'
+            cli_logger.debug(msg % filename)
+            continue
+
+        msg = 'Parsing tagcube configuration file "%s"'
+        cli_logger.debug(msg % filename)
+
+        email, api_key = _parse_config_file_impl(filename)
+        if email is not None and api_key is not None:
+
+            msg = ('Found authentication credentials:\n'
+                   '    email: %s\n'
+                   '    api_key: %s')
+            tokenized_api_key = '%s...%s' % (api_key[:3], api_key[-3:])
+            args = (email, tokenized_api_key)
+            cli_logger.debug(msg % args)
+
+            return email, api_key
+        else:
+            msg = 'Configuration file does not contain credentials'
+            cli_logger.debug(msg)
     else:
         return None, None
 
@@ -37,17 +85,16 @@ def _parse_config_file_impl(filename):
     try:
         doc = yaml.load(file(filename).read())
         
-        email = doc["credentials"]["email"]
-        api_key = doc["credentials"]["api_key"]
+        email = doc['credentials']['email']
+        api_key = doc['credentials']['api_key']
         
         return email, api_key
-    except TypeError:
-        msg = 'Invalid .tagcube configuration file'
-        print(msg)
+    except (KeyError, TypeError):
+        print(INVALID_FILE)
 
     except yaml.scanner.ScannerError, e:
-        msg = 'Invalid .tagcube configuration file format: "%s" at line %s'
-        print(msg % (e.problem, e.problem_mark.line))
+
+        print(SYNTAX_ERROR_FILE % (e.problem, e.problem_mark.line))
 
     return None, None
 
