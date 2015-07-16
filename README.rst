@@ -12,14 +12,14 @@ commonly used in continuous delivery scripts.
 Usage
 =====
 
-The easiest way to start a new scan is to call ``tagcube-cli`` with the target
+The easiest way to start a new scan is to call ``tagcube`` with the target
 URL as parameter:
 
 ::
 
     $ export TAGCUBE_EMAIL=user@example.com
     $ export TAGCUBE_API_KEY=`cat key.txt`
-    $ tagcube --root-url http://domain.com
+    $ tagcube scan --root-url http://domain.com
     Web application scan for "http://domain.com/" successfully started at TagCube cloud.
 
 This will create the new domain resource in TagCube's REST API and start a new
@@ -42,7 +42,7 @@ when it finishes
 
 ::
 
-    $ tagcube --root-urls http://target.com
+    $ tagcube scan --root-urls http://target.com
 
 
 Run a scan with a custom profile, enabling verbose mode and notifying a
@@ -50,8 +50,8 @@ different email address when the scan finishes
 
 ::
 
-    $ tagcube --root-urls http://target.com --email-notify=other@example.com \
-              --scan-profile=fast_scan -v
+    $ tagcube scan --root-urls http://target.com --email-notify=other@example.com \
+                   --scan-profile=fast_scan -v
 
 Provide TagCube's REST API credentials as command line arguments. Read the
 documentation to find how to provide REST API credentials using environment
@@ -59,8 +59,8 @@ variables or the .tagcube file
 
 ::
 
-    $ tagcube --root-urls http://target.com  --tagcube-email=user@example.com \
-              --tagcube-api-key=...
+    $ tagcube scan --root-urls http://target.com  --tagcube-email=user@example.com \
+                   --tagcube-api-key=...
 
 Verify that the configured credentials are working
 
@@ -108,7 +108,7 @@ we recommend adding these two lines after the code is pushed to the servers:
 ::
 
     pip install --upgrade tagcube-cli
-    tagcube-cli http://target.com
+    tagcube scan --root-url http://target.com
 
 While in most cases its recommend to be specific about the version of any
 external package installed using ``pip``, we recommend a more relaxed installation
