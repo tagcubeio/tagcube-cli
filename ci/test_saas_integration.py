@@ -20,6 +20,7 @@ class TestTagCubeSaaSIntegration(unittest.TestCase):
 
     TAGCUBE_SCAN_CMD_FMT = 'tagcube scan --scan-profile=fast_scan -v --root-url %s'
     TAGCUBE_AUTH_CMD = 'tagcube auth -v'
+    TAGCUBE_VERSION_CMD = 'tagcube version'
 
     def setUp(self):
         self.assertIsNotNone(self.STAGING_ROOT_URL)
@@ -41,6 +42,7 @@ class TestTagCubeSaaSIntegration(unittest.TestCase):
         """
         self.set_root_url()
         self.verify_credentials()
+        self.get_version()
         scan_id = self.start_scan()
         self.monitor_scan(scan_id)
 
@@ -65,6 +67,17 @@ class TestTagCubeSaaSIntegration(unittest.TestCase):
         except subprocess.CalledProcessError, cpe:
             msg = '"%s" failed. The output was:\n%s'
             self.assertTrue(False, msg % (self.TAGCUBE_AUTH_CMD, cpe.output))
+
+    def get_version(self):
+        print(self.TAGCUBE_VERSION_CMD)
+
+        try:
+            print(subprocess.check_output(self.TAGCUBE_VERSION_CMD,
+                                          stderr=subprocess.STDOUT,
+                                          shell=True))
+        except subprocess.CalledProcessError, cpe:
+            msg = '"%s" failed. The output was:\n%s'
+            self.assertTrue(False, msg % (self.TAGCUBE_VERSION_CMD, cpe.output))
 
     def start_scan(self):
         """
