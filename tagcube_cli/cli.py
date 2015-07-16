@@ -144,6 +144,16 @@ class TagCubeCLI(object):
                                            dest='subcommand')
 
         #
+        #   Auth test subcommand
+        #
+        _help = ('Test configured authentication credentials and exit. No'
+                 ' target URL nor email notifications need to be configured'
+                 ' to verify the credentials.')
+        auth_parser = subparsers.add_parser('auth',
+                                            help=_help,
+                                            parents=[common_parser])
+
+        #
         #   Scan
         #
         scan_parser = subparsers.add_parser('scan',
@@ -171,22 +181,6 @@ class TagCubeCLI(object):
                                       ' --path-file parameter is specified.')
 
         #
-        #   Auth test subcommand
-        #
-        _help = ('Test configured authentication credentials and exit. No'
-                 ' target URL nor email notifications need to be configured'
-                 ' to verify the credentials.')
-        auth_parser = subparsers.add_parser('auth',
-                                            help=_help,
-                                            parents=[common_parser])
-
-        #
-        #   Version subcommand
-        #
-        _help = 'Print the tagcube-cli version'
-        version_parser = subparsers.add_parser('version', help=_help)
-
-        #
         #   Batch scan subcommand
         #
         _help = ('Scan multiple domains and URLs in one command, one scan will'
@@ -202,6 +196,12 @@ class TagCubeCLI(object):
                                   dest='urls_file',
                                   type=argparse.FileType('r'),
                                   help='Text file containing one URL per line')
+
+        #
+        #   Version subcommand
+        #
+        _help = 'Print the tagcube-cli version'
+        version_parser = subparsers.add_parser('version', help=_help)
 
         cmd_args = parser.parse_args(args)
 
