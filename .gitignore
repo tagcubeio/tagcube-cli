@@ -53,5 +53,9 @@ coverage.xml
 docs/_build/
 
 .idea/
-.tagcube
+.tagcube*
 paths.txt
+urls.txt
+creds.yml
+test.txt
+
