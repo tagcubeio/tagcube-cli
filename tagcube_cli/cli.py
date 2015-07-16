@@ -9,6 +9,7 @@ from tagcube_cli.logger import cli_logger
 from tagcube_cli.subcommands.auth import do_auth_test
 from tagcube_cli.subcommands.scan import do_scan_start
 from tagcube_cli.subcommands.batch import do_batch_scan
+from tagcube_cli.subcommands.version import do_version
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                argparse_url_type, argparse_path_list_type,
                                argparse_email_type)
@@ -37,14 +38,14 @@ class TagCubeCLI(object):
         * Creates and configures a TagCubeClient instance
         * Launches a scan
     """
-    def __init__(self, email, api_key, cmd_args):
-        self.client = TagCubeClient(email, api_key, verbose=cmd_args.verbose)
+    API_SUBCOMMAND = {'auth', 'scan', 'batch'}
+
+    def __init__(self, cmd_args):
         self.cmd_args = cmd_args
 
     @classmethod
     def from_cmd_args(cls, cmd_args):
-        email, api_key = cls.get_credentials(cmd_args)
-        return cls(email, api_key, cmd_args)
+        return cls(cmd_args)
 
     def run(self):
         """
@@ -54,13 +55,19 @@ class TagCubeCLI(object):
 
         :return: The exit code for our process
         """
+        client = None
+
+        if self.cmd_args.subcommand in self.API_SUBCOMMAND:
+            email, api_key = TagCubeCLI.get_credentials(self.cmd_args)
+            client = TagCubeClient(email, api_key, verbose=self.cmd_args.verbose)
+
         subcommands = {'auth': do_auth_test,
                        'scan': do_scan_start,
-                       'batch': do_batch_scan}
+                       'batch': do_batch_scan,
+                       'version': do_version}
 
         try:
-            subcommands.get(self.cmd_args.subcommand)(self.client,
-                                                      self.cmd_args)
+            subcommands.get(self.cmd_args.subcommand)(client, self.cmd_args)
 
         except ConnectionError, ce:
             msg = 'Failed to connect to TagCube REST API: "%s"'
@@ -137,6 +144,16 @@ class TagCubeCLI(object):
                                            dest='subcommand')
 
         #
+        #   Auth test subcommand
+        #
+        _help = ('Test configured authentication credentials and exit. No'
+                 ' target URL nor email notifications need to be configured'
+                 ' to verify the credentials.')
+        auth_parser = subparsers.add_parser('auth',
+                                            help=_help,
+                                            parents=[common_parser])
+
+        #
         #   Scan
         #
         scan_parser = subparsers.add_parser('scan',
@@ -164,16 +181,6 @@ class TagCubeCLI(object):
                                       ' --path-file parameter is specified.')
 
         #
-        #   Auth test subcommand
-        #
-        _help = ('Test configured authentication credentials and exit. No'
-                 ' target URL nor email notifications need to be configured'
-                 ' to verify the credentials.')
-        auth_parser = subparsers.add_parser('auth',
-                                            help=_help,
-                                            parents=[common_parser])
-
-        #
         #   Batch scan subcommand
         #
         _help = ('Scan multiple domains and URLs in one command, one scan will'
@@ -190,11 +197,18 @@ class TagCubeCLI(object):
                                   type=argparse.FileType('r'),
                                   help='Text file containing one URL per line')
 
+        #
+        #   Version subcommand
+        #
+        _help = 'Print the tagcube-cli version'
+        version_parser = subparsers.add_parser('version', help=_help)
+
         cmd_args = parser.parse_args(args)
 
         handlers = {'scan': TagCubeCLI.handle_scan_args,
                     'auth': TagCubeCLI.handle_auth_args,
-                    'batch': TagCubeCLI.handle_batch_args}
+                    'batch': TagCubeCLI.handle_batch_args,
+                    'version': TagCubeCLI.handle_version_args,}
 
         handler = handlers.get(cmd_args.subcommand)
         return handler(parser, cmd_args)
@@ -224,6 +238,10 @@ class TagCubeCLI(object):
     @staticmethod
     def handle_auth_args(parser, cmd_args):
         TagCubeCLI.handle_global_args(parser, cmd_args)
+        return cmd_args
+
+    @staticmethod
+    def handle_version_args(parser, cmd_args):
         return cmd_args
 
     @staticmethod

@@ -31,21 +31,21 @@ class TestTagCubeCLI(unittest.TestCase):
                                        'TAGCUBE_API_KEY': 'w'}):
 
             parsed_args = TagCubeCLI.parse_args(self.SIMPLE_ARGS)
-            tagcube_cli = TagCubeCLI.from_cmd_args(parsed_args)
-            self.assertEqual(tagcube_cli.client.email, 'x@y.com')
-            self.assertEqual(tagcube_cli.client.api_key, 'w')
+            email, api_key = TagCubeCLI.get_credentials(parsed_args)
+            self.assertEqual(email, 'x@y.com')
+            self.assertEqual(api_key, 'w')
 
     def test_user_pass_none(self):
         parsed_args = TagCubeCLI.parse_args(self.SIMPLE_ARGS)
-        self.assertRaises(ValueError, TagCubeCLI.from_cmd_args, parsed_args)
+        self.assertRaises(ValueError, TagCubeCLI.get_credentials, parsed_args)
 
     def test_user_pass_command_line_with_creds(self):
         args = self.SIMPLE_ARGS + ['--email=x@y.com', '--key=w']
 
         parsed_args = TagCubeCLI.parse_args(args)
-        tagcube_cli = TagCubeCLI.from_cmd_args(parsed_args)
-        self.assertEqual(tagcube_cli.client.email, 'x@y.com')
-        self.assertEqual(tagcube_cli.client.api_key, 'w')
+        email, api_key = TagCubeCLI.get_credentials(parsed_args)
+        self.assertEqual(email, 'x@y.com')
+        self.assertEqual(api_key, 'w')
 
     def test_parse_path_file_ok(self):
         path_file = '/foo\n/bar'
