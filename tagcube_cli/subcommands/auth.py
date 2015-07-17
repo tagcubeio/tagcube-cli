@@ -7,7 +7,8 @@ def do_auth_test(client, cmd_args):
     """
     current_user = client.get_current_user()
     if current_user is None:
-        raise ValueError('Invalid TagCube REST API credentials.')
+        msg = 'Invalid TagCube REST API credentials for %s'
+        raise ValueError(msg % client.email)
 
     email = current_user.get('email')
     msg = 'Successfully authenticated using %s\'s REST API key'
