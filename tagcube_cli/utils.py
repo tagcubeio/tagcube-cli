@@ -54,6 +54,10 @@ def parse_config_file():
         email, api_key = _parse_config_file_impl(filename)
         if email is not None and api_key is not None:
 
+            # Just in case, we don't want the auth to fail because of a space
+            email = email.strip()
+            api_key = api_key.strip()
+
             msg = ('Found authentication credentials:\n'
                    '    email: %s\n'
                    '    api_key: %s')
