@@ -96,9 +96,11 @@ def _parse_config_file_impl(filename):
         api_key = doc['credentials']['api_key']
     except (KeyError, TypeError):
         print(INVALID_FILE)
+        return None, None
 
     except yaml.scanner.ScannerError, e:
         print(SYNTAX_ERROR_FILE % (e.problem, e.problem_mark.line))
+        return None, None
 
     # Just in case, we don't want the auth to fail because of a space
     email = email.strip()

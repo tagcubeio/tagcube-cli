@@ -16,7 +16,7 @@ class TestParseConfigFile(unittest.TestCase):
     def test_parse_config_ok(self):
         
         EMAIL = 'abc@def.com'
-        API_TOKEN = '43ada32e5a89729c20e4decf26f5b3344d72cb80'
+        API_TOKEN = 'ffe83b68-7b6f-4992-a0ee-a1cf57f8072f'
         
         fh = tempfile.NamedTemporaryFile('w', delete=False)
         fh.write(CONFIG_FMT % (EMAIL, API_TOKEN))
