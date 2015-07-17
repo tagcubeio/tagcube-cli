@@ -12,7 +12,7 @@ from tagcube_cli.subcommands.batch import do_batch_scan
 from tagcube_cli.subcommands.version import do_version
 from tagcube_cli.utils import (parse_config_file, get_config_from_env,
                                argparse_url_type, argparse_path_list_type,
-                               argparse_email_type)
+                               argparse_email_type, argparse_uuid_type)
 
 
 DESCRIPTION = 'TagCube client - %s' % TagCubeClient.DEFAULT_ROOT_URL
@@ -108,6 +108,7 @@ class TagCubeCLI(object):
         common_parser.add_argument('--key',
                                    required=False,
                                    dest='key',
+                                   type=argparse_uuid_type,
                                    help='The API key to authenticate with'
                                         ' TagCube\'s REST API')
 

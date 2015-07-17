@@ -1,8 +1,13 @@
+import re
 import os
 import yaml
 import argparse
 
 from tagcube_cli.logger import cli_logger
+
+INVALID_UUID = ('Invalid REST API key, the right format looks like'
+                ' 208e57a8-1173-49c9-b5f3-e15535e70e83 (include the dashes and'
+                ' verify length)')
 
 INVALID_FILE = '''\
 Invalid .tagcube configuration file found, the expected format is:
@@ -53,11 +58,6 @@ def parse_config_file():
 
         email, api_key = _parse_config_file_impl(filename)
         if email is not None and api_key is not None:
-
-            # Just in case, we don't want the auth to fail because of a space
-            email = email.strip()
-            api_key = api_key.strip()
-
             msg = ('Found authentication credentials:\n'
                    '    email: %s\n'
                    '    api_key: %s')
@@ -86,21 +86,33 @@ def _parse_config_file_impl(filename):
                 - email
                 - api_token
     """
+    api_key = None
+    email = None
+
     try:
         doc = yaml.load(file(filename).read())
         
         email = doc['credentials']['email']
         api_key = doc['credentials']['api_key']
-        
-        return email, api_key
     except (KeyError, TypeError):
         print(INVALID_FILE)
 
     except yaml.scanner.ScannerError, e:
-
         print(SYNTAX_ERROR_FILE % (e.problem, e.problem_mark.line))
 
-    return None, None
+    # Just in case, we don't want the auth to fail because of a space
+    email = email.strip()
+    api_key = api_key.strip()
+
+    if not is_valid_api_key(api_key):
+        cli_logger.debug(INVALID_UUID)
+        api_key = None
+
+    if not is_valid_email(email):
+        cli_logger.debug('Invalid email address: %s' % email)
+        email = None
+
+    return email, api_key
 
 
 def get_config_from_env():
@@ -115,6 +127,18 @@ def is_valid_email(email):
     return '@' in email and '.' in email
 
 
+def is_valid_api_key(api_key):
+    """
+    API keys are UUID4(), so we just check that the length and format is the
+    expected one.
+
+    :param api_key:
+    :return:
+    """
+    uuid_re = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    return bool(re.match(uuid_re, api_key))
+
+
 def is_valid_path(path):
     """
     :return: True if the path is valid, else raise a ValueError with the
@@ -126,8 +150,8 @@ def is_valid_path(path):
 
     for c in ' \t':
         if c in path:
-            msg = 'Invalid character "%s" found in path. Paths need to be' \
-                  ' URL-encoded.'
+            msg = ('Invalid character "%s" found in path. Paths need to be'
+                   ' URL-encoded.')
             raise ValueError(msg % c)
 
     return True
@@ -139,6 +163,13 @@ def argparse_email_type(email):
         raise argparse.ArgumentTypeError(msg % email)
 
     return email
+
+
+def argparse_uuid_type(api_key):
+    if not is_valid_api_key(api_key):
+        raise argparse.ArgumentTypeError(INVALID_UUID)
+
+    return api_key
 
 
 def argparse_url_type(url):
