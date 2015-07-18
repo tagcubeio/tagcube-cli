@@ -26,14 +26,21 @@ from tagcube.utils.urlparsing import (get_domain_from_url, use_ssl,
 api_logger = logging.getLogger(__name__)
 
 CAN_NOT_SCAN_DOMAIN_ERROR = '''\
-You can't scan the specified domain. This happens in the following cases:
+Unable to scan the specified domain: %s
 
- * The current plan only allows scans to verified domains => Verify your domain
+The most common reasons and solutions for this error are:
+
+ * The current plan only allows scans to verified domains => Verify the domain
  ownership using TagCube's web UI or the REST API.
 
  * The domain quota for your plan has been exceeded => Upgrade your plan to be
  able to scan more domains.
 
+ * TagCube is unable to reach the target Web application to assert that the
+ verification code was added => Make sure that the application is reachable
+ from the Internet.
+
+More information might be available in your account at https://ui.tagcube.io/
 '''
 
 
@@ -155,7 +162,8 @@ class TagCubeClient(object):
                                                           port, is_ssl)
 
             if not self.can_scan(verification_resource):
-                raise ValueError(CAN_NOT_SCAN_DOMAIN_ERROR)
+                msg = verification_resource.get('verification_message', '')
+                raise ValueError(CAN_NOT_SCAN_DOMAIN_ERROR % msg)
 
         #
         # Email notification handling
