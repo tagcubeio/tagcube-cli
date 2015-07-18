@@ -252,7 +252,8 @@ class TagCubeClient(object):
         """
         filter_dict = {'port': port,
                        'ssl': 'true' if is_ssl else 'false',
-                       'domain': domain_name}
+                       'domain': domain_name,
+                       'success': True}
         return self.multi_filter_resource('verifications', filter_dict,
                                           result_handler=LATEST_RESULT)
 
